@@ -120,6 +120,25 @@ export function preload(srcs: string[]) {
   );
 }
 
+const imgCache = new Map<string, HTMLImageElement>();
+
+export function getImage(src: string): HTMLImageElement | null {
+  const hit = imgCache.get(src);
+  if (hit) return hit.complete && hit.naturalWidth > 0 ? hit : null;
+  if (typeof window !== "undefined") {
+    const img = new Image();
+    img.src = src;
+    imgCache.set(src, img);
+    return null;
+  }
+  return null;
+}
+
+export const BG_IMAGES = {
+  madrid: "/backgrounds/madrid-bg.jpg",
+  stone: "/backgrounds/granite-stone.jpg",
+};
+
 export const SPRITES = {
   stand: "/sprites/alba-stand.png",
   walk: "/sprites/alba-walk.png",

@@ -1,7 +1,7 @@
 import { NPC_BY_ID } from "@/lib/content";
 import type { Ent, Run } from "./engine";
 import { T } from "./engine";
-import { getSprite, SPRITES } from "./sprites";
+import { getImage, BG_IMAGES, getSprite, SPRITES } from "./sprites";
 
 type Theme = {
   sky: [string, string, string, string];
@@ -248,6 +248,20 @@ function drawBackdrop(
   viewH: number,
   camY: number,
 ) {
+  // Photorealistic 3D Pixar Madrid Skyline with Parallax
+  const bgImg = getImage(BG_IMAGES.madrid);
+  if (bgImg) {
+    const bgH = viewH + 30;
+    const bgW = (bgH / bgImg.height) * bgImg.width;
+    const offset = ((-camX * 0.22) % bgW) - bgW;
+    const startX = camX + offset;
+    for (let x = startX; x < camX + viewW + bgW; x += bgW) {
+      ctx.drawImage(bgImg, x, camY - 10, bgW, bgH);
+    }
+    return;
+  }
+
+  // Fallback procedural backdrop
   // 1. Radiant Sun with atmospheric glow
   const sunX = camX + viewW * 0.72 - (camX * 0.04) % (viewW * 1.2);
   const sunY = camY + 84;
@@ -564,57 +578,72 @@ function drawTiles(ctx: CanvasRenderingContext2D, run: Run, theme: Theme, camX: 
 
       // Solid ground tile (tile === 1)
       const exposed = y === 0 || run.tiles[(y - 1) * run.W + x] !== 1;
+      const stoneImg = getImage(BG_IMAGES.stone);
 
       if (exposed) {
-        // Granite cobblestone paving (Adoquines de granito con bordillo)
-        // 1. Base stone fill
-        ctx.fillStyle = theme.ground;
-        ctx.fillRect(px, py, T, T);
+        // Granite cobblestone paving (Adoquines de granito con bordillo pulido)
+        if (stoneImg) {
+          const sx = Math.abs(x * 96) % (stoneImg.naturalWidth ? stoneImg.naturalWidth - 96 : 928);
+          const sy = Math.abs(y * 96) % (stoneImg.naturalHeight ? stoneImg.naturalHeight - 96 : 928);
+          ctx.drawImage(stoneImg, sx, sy, 96, 96, px, py, T, T);
+          // Very light warm tint
+          ctx.fillStyle = "rgba(40, 25, 15, 0.08)";
+          ctx.fillRect(px, py, T, T);
+        } else {
+          // Fallback solid stone fill
+          ctx.fillStyle = theme.ground;
+          ctx.fillRect(px, py, T, T);
+          ctx.fillStyle = "rgba(255,255,255,0.22)";
+          ctx.fillRect(px + 2, py + 18, 20, 11);
+          ctx.fillRect(px + 26, py + 18, 20, 11);
+          ctx.fillRect(px + 12, py + 32, 22, 12);
+          ctx.strokeStyle = "rgba(45,30,20,0.18)";
+          ctx.lineWidth = 1;
+          ctx.strokeRect(px + 1, py + 17, 22, 13);
+          ctx.strokeRect(px + 25, py + 17, 22, 13);
+          ctx.strokeRect(px + 11, py + 31, 24, 14);
+        }
 
-        // 2. Granite curb top slab (Bordillo pulido)
+        // Madrid polished granite curb slab (Bordillo de granito pulido)
         ctx.fillStyle = theme.top;
-        ctx.fillRect(px, py, T, 14);
+        ctx.fillRect(px, py, T, 12);
 
-        // 3. Highlighted beveled top edge
+        // Highlighted beveled top edge
         ctx.fillStyle = theme.topHighlight;
         ctx.fillRect(px, py, T, 3);
 
-        // 4. Accent mortar band under curb
-        ctx.fillStyle = theme.accent;
+        // Ambient contact shadow under curb
+        ctx.fillStyle = "rgba(0,0,0,0.22)";
         ctx.fillRect(px, py + 12, T, 3);
 
-        // 5. Granite pavers with bevels & mortar joints
-        ctx.fillStyle = "rgba(255,255,255,0.22)";
-        ctx.fillRect(px + 2, py + 18, 20, 11);
-        ctx.fillRect(px + 26, py + 18, 20, 11);
-        ctx.fillRect(px + 12, py + 32, 22, 12);
-
-        ctx.strokeStyle = "rgba(45,30,20,0.18)";
-        ctx.lineWidth = 1;
-        ctx.strokeRect(px + 1, py + 17, 22, 13);
-        ctx.strokeRect(px + 25, py + 17, 22, 13);
-        ctx.strokeRect(px + 11, py + 31, 24, 14);
-
         // Vertical curb joints
-        ctx.fillStyle = "rgba(0,0,0,0.2)";
+        ctx.fillStyle = "rgba(0,0,0,0.25)";
         ctx.fillRect(px + 23, py, 1.5, 12);
       } else {
         // Deep foundational ashlar masonry (Sillares de cantería maciza)
-        ctx.fillStyle = theme.groundShadow;
-        ctx.fillRect(px, py, T, T);
+        if (stoneImg) {
+          const sx = Math.abs((x + 5) * 96) % (stoneImg.naturalWidth ? stoneImg.naturalWidth - 96 : 928);
+          const sy = Math.abs((y + 3) * 96) % (stoneImg.naturalHeight ? stoneImg.naturalHeight - 96 : 928);
+          ctx.drawImage(stoneImg, sx, sy, 96, 96, px, py, T, T);
+          // Foundation underground darkening
+          ctx.fillStyle = "rgba(25, 18, 14, 0.38)";
+          ctx.fillRect(px, py, T, T);
+        } else {
+          ctx.fillStyle = theme.groundShadow;
+          ctx.fillRect(px, py, T, T);
+          ctx.fillStyle = theme.ground;
+          ctx.fillRect(px + 1, py + 1, T - 2, T - 2);
+        }
 
-        ctx.fillStyle = theme.ground;
-        ctx.fillRect(px + 1, py + 1, T - 2, T - 2);
-
-        // Subtle stone texture & joints
-        ctx.strokeStyle = "rgba(0,0,0,0.15)";
+        // Stone block border joints
+        ctx.strokeStyle = "rgba(0,0,0,0.22)";
         ctx.lineWidth = 1;
         ctx.strokeRect(px + 0.5, py + 0.5, T, T);
 
-        // Alternating brick seam
+        // Alternating masonry vertical seam
         const row = y % 2;
         const seamX = row === 0 ? px + 24 : px + 12;
-        ctx.fillStyle = "rgba(0,0,0,0.18)";
+        ctx.fillStyle = "rgba(0,0,0,0.25)";
         ctx.fillRect(seamX, py, 1.5, T);
       }
     }
@@ -853,32 +882,32 @@ function drawEntity(ctx: CanvasRenderingContext2D, run: Run, item: Ent, theme: T
 
     // Glowing interaction circle on the ground
     ctx.save();
-    ctx.translate(item.x + 18, item.y + item.h);
+    ctx.translate(item.x + item.w / 2, item.y + item.h);
 
     const pulse = 0.5 + Math.sin(run.time * 3.5) * 0.25;
-    const ring = ctx.createRadialGradient(0, 2, 4, 0, 2, 28);
+    const ring = ctx.createRadialGradient(0, 2, 3, 0, 2, 20);
     ring.addColorStop(0, `rgba(244, 192, 70, ${0.4 * pulse})`);
     ring.addColorStop(0.7, `rgba(244, 192, 70, ${0.2 * pulse})`);
     ring.addColorStop(1, "rgba(244, 192, 70, 0)");
     ctx.fillStyle = ring;
     ctx.beginPath();
-    ctx.ellipse(0, 2, 28, 9, 0, 0, Math.PI * 2);
+    ctx.ellipse(0, 2, 20, 6, 0, 0, Math.PI * 2);
     ctx.fill();
 
     // Soft drop shadow
     ctx.fillStyle = "rgba(35, 20, 14, 0.32)";
     ctx.beginPath();
-    ctx.ellipse(0, 2, 20, 6, 0, 0, Math.PI * 2);
+    ctx.ellipse(0, 2, 14, 4, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    const dh = 114;
-    const bobNpc = Math.sin(run.time * 2.2 + item.id) * 2;
+    const dh = 70;
+    const bobNpc = Math.sin(run.time * 2.2 + item.id) * 1.4;
 
     if (sprite) {
       const dw = dh * (sprite.width / sprite.height);
-      ctx.drawImage(sprite, -dw / 2, -dh + bobNpc + 4, dw, dh);
+      ctx.drawImage(sprite, -dw / 2, -dh + bobNpc + 2, dw, dh);
     } else {
-      drawChibi(ctx, item.ref, -22, -dh + bobNpc + 24, run.time);
+      drawChibi(ctx, item.ref, -15, -dh + bobNpc + 16, run.time);
     }
     ctx.restore();
 
@@ -1441,34 +1470,34 @@ function drawChibi(ctx: CanvasRenderingContext2D, id: string, x: number, y: numb
   const npc = NPC_BY_ID.get(id);
   const body = npc?.body ?? "#1f8a8a";
   const hair = npc?.hair ?? "#3a2a22";
-  const bob = Math.sin(time * 2 + x) * 1.5;
+  const bob = Math.sin(time * 2 + x) * 1.0;
   ctx.save();
   ctx.translate(x, y + bob);
   ctx.fillStyle = "rgba(0,0,0,.15)";
   ctx.beginPath();
-  ctx.ellipse(22, 76, 16, 4, 0, 0, Math.PI * 2);
+  ctx.ellipse(14, 48, 10, 3, 0, 0, Math.PI * 2);
   ctx.fill();
   ctx.fillStyle = "#2c3338";
-  ctx.fillRect(12, 58, 8, 16);
-  ctx.fillRect(26, 58, 8, 16);
+  ctx.fillRect(8, 36, 5, 12);
+  ctx.fillRect(16, 36, 5, 12);
   ctx.fillStyle = body;
-  round(ctx, 8, 28, 30, 34, 10);
+  round(ctx, 5, 18, 19, 20, 6);
   ctx.fill();
   ctx.fillStyle = "#f3d2b8";
   ctx.beginPath();
-  ctx.arc(23, 20, 14, 0, Math.PI * 2);
+  ctx.arc(14, 13, 9, 0, Math.PI * 2);
   ctx.fill();
   ctx.fillStyle = hair;
   ctx.beginPath();
-  ctx.arc(23, 14, 12, Math.PI, Math.PI * 2);
+  ctx.arc(14, 9, 8, Math.PI, Math.PI * 2);
   ctx.fill();
   if (npc?.hat === "crown" || npc?.hat === "star") {
     ctx.fillStyle = "#e2b657";
-    ctx.fillRect(12, 4, 22, 6);
+    ctx.fillRect(7, 2, 14, 4);
   }
   ctx.fillStyle = "#1b1420";
-  ctx.fillRect(17, 18, 3, 3);
-  ctx.fillRect(26, 18, 3, 3);
+  ctx.fillRect(10, 12, 2, 2);
+  ctx.fillRect(16, 12, 2, 2);
   ctx.restore();
 }
 
@@ -1492,39 +1521,39 @@ function drawPlayer(ctx: CanvasRenderingContext2D, run: Run) {
     spritePath = walkFrames[frameIdx] ?? SPRITES.walk;
 
     // Organic walking stride bob & forward lean
-    bob = Math.sin(stepProgress * Math.PI) * 3.5;
+    bob = Math.sin(stepProgress * Math.PI) * 2.2;
     tilt = Math.max(-0.12, Math.min(0.12, body.vx * 0.00035 * body.face));
   } else {
     // Idle breathing animation
     spritePath = SPRITES.stand;
-    bob = Math.sin(run.time * 2.8) * 1.6;
+    bob = Math.sin(run.time * 2.8) * 1.0;
   }
 
   const sprite = getSprite(spritePath) ?? getSprite(SPRITES.walk);
-  const dh = jumping ? 122 : 116;
+  const dh = jumping ? 72 : 68;
 
   ctx.save();
   ctx.translate(body.x + body.w / 2, body.y + body.h);
 
   // Soft double-layer contact shadow that scales with jump height
-  const shadowScale = jumping ? 0.7 : 1;
+  const shadowScale = jumping ? 0.65 : 1;
   ctx.fillStyle = "rgba(25, 16, 12, 0.28)";
   ctx.beginPath();
-  ctx.ellipse(0, 3, 20 * shadowScale, 5.5 * shadowScale, 0, 0, Math.PI * 2);
+  ctx.ellipse(0, 2, 13 * shadowScale, 3.8 * shadowScale, 0, 0, Math.PI * 2);
   ctx.fill();
 
   // Subtle footstep dust when running
-  if (walking && Math.abs(bob) > 2.8) {
-    ctx.fillStyle = "rgba(235, 218, 195, 0.45)";
+  if (walking && Math.abs(bob) > 1.8) {
+    ctx.fillStyle = "rgba(235, 218, 195, 0.4)";
     ctx.beginPath();
-    ctx.arc(-body.face * 12, 0, 4, 0, Math.PI * 2);
-    ctx.arc(-body.face * 18, -2, 2.5, 0, Math.PI * 2);
+    ctx.arc(-body.face * 8, 0, 3, 0, Math.PI * 2);
+    ctx.arc(-body.face * 12, -1.5, 2, 0, Math.PI * 2);
     ctx.fill();
   }
 
   // Facing, tilt, and landing squash/stretch
-  const squashY = body.land > 0 ? 0.88 : jumping ? 1.05 : 1;
-  const squashX = body.land > 0 ? 1.12 : jumping ? 0.96 : 1;
+  const squashY = body.land > 0 ? 0.9 : jumping ? 1.04 : 1;
+  const squashX = body.land > 0 ? 1.1 : jumping ? 0.96 : 1;
   ctx.scale(body.face * squashX, squashY);
   ctx.rotate(tilt);
 
@@ -1532,21 +1561,21 @@ function drawPlayer(ctx: CanvasRenderingContext2D, run: Run) {
     const dw = dh * (sprite.width / sprite.height);
     // Invulnerability flashing
     if (run.iframe > 0 && Math.sin(run.time * 30) > 0) ctx.globalAlpha = 0.45;
-    ctx.drawImage(sprite, -dw / 2, -dh + bob + 4, dw, dh);
+    ctx.drawImage(sprite, -dw / 2, -dh + bob + 2, dw, dh);
   } else {
     // Fallback chibi if loading
     ctx.fillStyle = "#d4654a";
     ctx.beginPath();
-    ctx.arc(0, -78, 16, 0, Math.PI * 2);
+    ctx.arc(0, -48, 11, 0, Math.PI * 2);
     ctx.fill();
     ctx.fillStyle = "#8d8f93";
-    round(ctx, -16, -64, 32, 28, 8);
+    round(ctx, -10, -38, 20, 18, 5);
     ctx.fill();
     ctx.fillStyle = "#1f8a8a";
-    ctx.fillRect(-8, -58, 16, 16);
+    ctx.fillRect(-5, -34, 10, 10);
     ctx.fillStyle = "#243044";
-    ctx.fillRect(-8, -36, 7, 24);
-    ctx.fillRect(2, -36, 7, 24);
+    ctx.fillRect(-5, -20, 4, 16);
+    ctx.fillRect(1, -20, 4, 16);
   }
   ctx.restore();
 }

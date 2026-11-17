@@ -124,7 +124,7 @@ function heartsFor(d: Difficulty) {
 }
 
 function blankPlayer(x: number, y: number): Run["player"] {
-  return { x, y, w: 28, h: 50, vx: 0, vy: 0, onGround: false, face: 1, coyote: 0, buffer: 0, anim: 0, land: 0 };
+  return { x, y, w: 24, h: 48, vx: 0, vy: 0, onGround: false, face: 1, coyote: 0, buffer: 0, anim: 0, land: 0 };
 }
 
 function baseRun(opts: {
@@ -183,7 +183,7 @@ function baseRun(opts: {
 
 function tileAt(run: Run, tx: number, ty: number) {
   if (tx < 0 || tx >= run.W) return 1;
-  if (ty >= run.H) return 1;
+  if (ty >= run.H) return 0;
   if (ty < 0) return 0;
   return run.tiles[ty * run.W + tx];
 }
@@ -347,6 +347,13 @@ export function startStage(topicId: string, attempt: number, difficulty: Difficu
     }
   }
   setGround(run, ground, gaps);
+
+  // Add bridge walkway platforms across any gap so the player never falls into an inescapable trench
+  gaps.forEach(([a, b]) => {
+    for (let x = a; x <= b; x++) {
+      run.tiles[ground * W + x] = 2;
+    }
+  });
 
   // Stepped platform clusters with guaranteed accessibility from the ground
   const clusterCount = Math.max(5, Math.floor(W / 10));
@@ -619,13 +626,15 @@ export function step(run: Run, dt: number, input: Input) {
   body.land = Math.max(0, body.land - dt);
   body.anim += dt * (Math.abs(body.vx) > 20 ? 8 : 2);
 
-  if (body.y > run.H * T) {
+  // Pit fall recovery: instantly respawn safely on street level if falling below the ground
+  if (body.y > 11 * T + 8) {
     hurt(run);
-    body.x = run.checkpoint;
-    body.y = 4 * T;
-    body.vy = 0;
+    body.x = Math.max(60, run.checkpoint);
+    body.y = 11 * T - body.h - 10;
+    body.vy = -120;
+    body.onGround = true;
   }
-  if (body.onGround && body.x > 60) run.checkpoint = body.x;
+  if (body.onGround && body.x > 60 && body.y <= 11 * T) run.checkpoint = body.x;
 
   run.entities.forEach((item) => {
     if (item.dead) return;
