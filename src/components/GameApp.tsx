@@ -112,6 +112,7 @@ export default function GameApp() {
   const [examTotals, setExamTotals] = useState({ correct: 0, wrong: 0, blank: 0, asked: 0 });
   const [noteDraft, setNoteDraft] = useState("");
   const [customQ, setCustomQ] = useState({ prompt: "", options: ["", "", "", ""], correctIndex: 0, explanation: "" });
+  const [titlePose, setTitlePose] = useState<"study" | "cheer">("study");
 
   const toggleMute = useCallback(() => {
     const next = audio.toggle();
@@ -439,34 +440,101 @@ export default function GameApp() {
       {screen === "title" && (
         <main className="title-screen">
           <section className="hero-card">
-            <ChromaImg src={SPRITES.cheer} className="alba" alt="Alba, opositora pelirroja con gafas, celebrando" />
-            <p className="kicker">Gestión Civil del Estado · A2</p>
-            <h1>OPOS</h1>
+            <div className="hero-badge-top">🏛️ INAP · GACE A2</div>
+            <ChromaImg
+              src={titlePose === "study" ? SPRITES.walk : SPRITES.cheer}
+              className={`alba ${titlePose === "cheer" ? "is-cheer" : "is-walk"}`}
+              alt={titlePose === "study" ? "Alba, opositora pelirroja con apuntes de Gestión del Estado" : "Alba celebrando su plaza aprobada en el INAP"}
+            />
+            <div className="pose-toggle">
+              <button
+                type="button"
+                className={`pose-btn ${titlePose === "study" ? "active" : ""}`}
+                onClick={() => setTitlePose("study")}
+                title="Ver a Alba de camino a la biblioteca con sus libros"
+              >
+                🎒 Modo Estudio
+              </button>
+              <button
+                type="button"
+                className={`pose-btn ${titlePose === "cheer" ? "active" : ""}`}
+                onClick={() => setTitlePose("cheer")}
+                title="Ver a Alba celebrando su plaza aprobada"
+              >
+                🏆 ¡Aprobada!
+              </button>
+            </div>
+            <div className="hero-content">
+              <p className="kicker">Gestión de la Administración Civil del Estado · A2</p>
+              <h1>OPOS</h1>
+              <p className="hero-tagline">El videojuego oficial de repaso de los 58 temas</p>
+            </div>
           </section>
           <section className="menu-card stack">
-            <p className="kicker">Plaza del INAP</p>
-            <h1>Alba y los 58 temas</h1>
-            <p className="lede">Un plataformas de repaso, con un submundo por tema, jefes de bloque y un aula final como el examen. Las preguntas cambian en cada intento.</p>
-            <label className="fine" htmlFor="name">Tu nombre</label>
-            <input id="name" className="name-input" value={name} maxLength={24} onChange={(event) => { setName(event.target.value); window.localStorage.setItem("opos-name", event.target.value); }} />
-            <div className="diff-grid">
-              {DIFFICULTIES.map((item) => (
-                <button key={item.id} className={`diff-card ${difficulty === item.id ? "active" : ""}`} onClick={() => { setDifficulty(item.id); window.localStorage.setItem("opos-difficulty", item.id); }}>
-                  <strong>{item.name}</strong>
-                  <span>{item.blurb}</span>
-                </button>
-              ))}
+            <div className="opos-header">
+              <span className="badge-official">📋 CONVOCATORIA OFICIAL BOE · AGE</span>
+              <p className="kicker">Sede Central del INAP · Calle Atocha</p>
+              <h1>Alba y los 58 temas</h1>
+              <p className="lede">
+                Plataformas de repaso interactivo del temario de Gestión Civil (A2). Recorre los 6 bloques normativos, desafía a los tribunales de cada ministerio y supéralos con éxito.
+              </p>
             </div>
-            <div className="row">
-              <button className="primary grow" onClick={() => { audio.unlock(); launch(startHub(difficulty)); }}>Entrar en la plaza</button>
+
+            <div className="progress-summary-card">
+              <div className="progress-bar-head">
+                <span><strong>Progreso en el Temario</strong></span>
+                <span className="progress-pct">{mastered}/58 temas con estrella ({Math.round((mastered / 58) * 100)}%)</span>
+              </div>
+              <div className="progress-track">
+                <div className="progress-fill" style={{ width: `${Math.max(4, Math.round((mastered / 58) * 100))}%` }} />
+              </div>
+            </div>
+
+            <div className="input-group">
+              <label className="fine" htmlFor="name">Nombre de la opositora / opositor</label>
+              <input id="name" className="name-input" value={name} maxLength={24} onChange={(event) => { setName(event.target.value); window.localStorage.setItem("opos-name", event.target.value); }} />
+            </div>
+
+            <div className="diff-section">
+              <label className="fine">Nivel de exigencia en la prueba</label>
+              <div className="diff-grid">
+                {DIFFICULTIES.map((item) => (
+                  <button key={item.id} className={`diff-card ${difficulty === item.id ? "active" : ""}`} onClick={() => { setDifficulty(item.id); window.localStorage.setItem("opos-difficulty", item.id); }}>
+                    <strong>{item.name}</strong>
+                    <span>{item.blurb}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="row main-actions">
+              <button className="primary grow cta-btn" onClick={() => { audio.unlock(); launch(startHub(difficulty)); }}>
+                <span className="cta-icon">🎮</span> Entrar en la Plaza del INAP
+              </button>
               <MuteButton muted={muted} onToggle={toggleMute} />
             </div>
-            <div className="row">
-              <button className="ghost" onClick={() => setScreen("codex")}>Temario</button>
-              <button className="ghost" onClick={() => setScreen("boe")}>Actualizar con el BOE</button>
-              <button className="ghost" onClick={() => { setScreen("exam"); setExamPhase("intro"); }}>Ir al examen</button>
+
+            <div className="nav-grid">
+              <button className="ghost nav-card-btn" onClick={() => setScreen("codex")}>
+                <span className="nav-icon">📖</span>
+                <strong>Cuaderno 58 Temas</strong>
+                <span>Apuntes, trampas y leyes</span>
+              </button>
+              <button className="ghost nav-card-btn" onClick={() => setScreen("boe")}>
+                <span className="nav-icon">⚖️</span>
+                <strong>Radar BOE</strong>
+                <span>Comprobador de leyes vigentes</span>
+              </button>
+              <button className="ghost nav-card-btn highlight" onClick={() => { setScreen("exam"); setExamPhase("intro"); }}>
+                <span className="nav-icon">🏛️</span>
+                <strong>Simulacro Examen</strong>
+                <span>Tribunal Calificador A2</span>
+              </button>
             </div>
-            <p className="fine">{mastered}/58 temas con estrella · {EXAM_META.program}</p>
+
+            <footer className="menu-footer">
+              <p className="fine">{mastered}/58 temas completados · {EXAM_META.program} · Convocatoria consolidada</p>
+            </footer>
           </section>
         </main>
       )}
