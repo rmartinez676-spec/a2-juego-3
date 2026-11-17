@@ -1,7 +1,7 @@
 import { NPC_BY_ID } from "@/lib/content";
 import type { Ent, Run } from "./engine";
 import { T } from "./engine";
-import { getImage, BG_IMAGES, getSprite, SPRITES } from "./sprites";
+import { getImage, BG_IMAGES, getSprite, SPRITES, getNpcSprite } from "./sprites";
 
 type Theme = {
   sky: [string, string, string, string];
@@ -879,38 +879,36 @@ function drawEntity(ctx: CanvasRenderingContext2D, run: Run, item: Ent, theme: T
     }
     ctx.restore();
   } else if (item.kind === "npc") {
-    const spriteKey = item.ref as keyof typeof SPRITES;
-    const spritePath = SPRITES[spriteKey];
-    const sprite = spritePath ? getSprite(spritePath) : null;
+    const sprite = getNpcSprite(item.ref);
 
     // Glowing interaction circle on the ground
     ctx.save();
     ctx.translate(item.x + item.w / 2, item.y + item.h);
 
     const pulse = 0.5 + Math.sin(run.time * 3.5) * 0.25;
-    const ring = ctx.createRadialGradient(0, 2, 3, 0, 2, 20);
-    ring.addColorStop(0, `rgba(244, 192, 70, ${0.4 * pulse})`);
-    ring.addColorStop(0.7, `rgba(244, 192, 70, ${0.2 * pulse})`);
+    const ring = ctx.createRadialGradient(0, 2, 3, 0, 2, 22);
+    ring.addColorStop(0, `rgba(244, 192, 70, ${0.45 * pulse})`);
+    ring.addColorStop(0.7, `rgba(244, 192, 70, ${0.22 * pulse})`);
     ring.addColorStop(1, "rgba(244, 192, 70, 0)");
     ctx.fillStyle = ring;
     ctx.beginPath();
-    ctx.ellipse(0, 2, 20, 6, 0, 0, Math.PI * 2);
+    ctx.ellipse(0, 2, 22, 7, 0, 0, Math.PI * 2);
     ctx.fill();
 
     // Soft drop shadow
     ctx.fillStyle = "rgba(35, 20, 14, 0.32)";
     ctx.beginPath();
-    ctx.ellipse(0, 2, 14, 4, 0, 0, Math.PI * 2);
+    ctx.ellipse(0, 2, 16, 5, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    const dh = 70;
-    const bobNpc = Math.sin(run.time * 2.2 + item.id) * 1.4;
+    const dh = 72;
+    const bobNpc = Math.sin(run.time * 2.2 + item.id) * 1.5;
 
     if (sprite) {
       const dw = dh * (sprite.width / sprite.height);
       ctx.drawImage(sprite, -dw / 2, -dh + bobNpc + 2, dw, dh);
     } else {
-      drawChibi(ctx, item.ref, -15, -dh + bobNpc + 16, run.time);
+      drawChibi(ctx, item.ref, 0, bobNpc, run.time);
     }
     ctx.restore();
 
@@ -1552,38 +1550,247 @@ function drawDeco(ctx: CanvasRenderingContext2D, item: Ent, theme: Theme, time: 
   ctx.restore();
 }
 
-function drawChibi(ctx: CanvasRenderingContext2D, id: string, x: number, y: number, time: number) {
+function drawChibi(ctx: CanvasRenderingContext2D, id: string, cx: number, bob: number, time: number) {
   const npc = NPC_BY_ID.get(id);
-  const body = npc?.body ?? "#1f8a8a";
-  const hair = npc?.hair ?? "#3a2a22";
-  const bob = Math.sin(time * 2 + x) * 1.0;
+  const suitColor = npc?.body ?? "#1f7f86";
+  const shirtColor = npc?.accent ?? "#ffffff";
+  const hairColor = npc?.hair ?? "#3a2a22";
+  const hatType = npc?.hat ?? "badge";
+  const breathe = Math.sin(time * 3 + cx) * 0.8;
+
   ctx.save();
-  ctx.translate(x, y + bob);
-  ctx.fillStyle = "rgba(0,0,0,.15)";
+  ctx.translate(cx, bob);
+
+  // 1. Natural Ground Shadow
+  ctx.fillStyle = "rgba(18, 12, 10, 0.28)";
   ctx.beginPath();
-  ctx.ellipse(14, 48, 10, 3, 0, 0, Math.PI * 2);
+  ctx.ellipse(0, 1, 15, 4.5, 0, 0, Math.PI * 2);
   ctx.fill();
-  ctx.fillStyle = "#2c3338";
-  ctx.fillRect(8, 36, 5, 12);
-  ctx.fillRect(16, 36, 5, 12);
-  ctx.fillStyle = body;
-  round(ctx, 5, 18, 19, 20, 6);
+
+  // 2. Leather Shoes (left & right)
+  ctx.fillStyle = "#1e1410";
+  round(ctx, -13, -7, 11, 7, 3);
   ctx.fill();
-  ctx.fillStyle = "#f3d2b8";
+  round(ctx, 2, -7, 11, 7, 3);
+  ctx.fill();
+  // Shoe shine
+  ctx.fillStyle = "rgba(255,255,255,0.35)";
+  ctx.fillRect(-10, -6, 5, 2);
+  ctx.fillRect(5, -6, 5, 2);
+
+  // 3. Tailored Formal Trousers / Skirt
+  ctx.fillStyle = "#273239";
+  // Left leg
+  ctx.fillRect(-11, -22, 9, 16);
+  // Right leg
+  ctx.fillRect(2, -22, 9, 16);
+  // Crease fold
+  ctx.fillStyle = "#1b2328";
+  ctx.fillRect(-7, -20, 1.5, 14);
+  ctx.fillRect(6, -20, 1.5, 14);
+
+  // 4. Suit Jacket / Blazer / Formal Coat
+  ctx.fillStyle = suitColor;
+  round(ctx, -15, -42 + breathe, 30, 22, 6);
+  ctx.fill();
+  ctx.strokeStyle = "rgba(0,0,0,0.18)";
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // 5. White / Silk Collared Shirt & Lapels
+  ctx.fillStyle = shirtColor;
   ctx.beginPath();
-  ctx.arc(14, 13, 9, 0, Math.PI * 2);
+  ctx.moveTo(-6, -42 + breathe);
+  ctx.lineTo(6, -42 + breathe);
+  ctx.lineTo(0, -32 + breathe);
+  ctx.closePath();
   ctx.fill();
-  ctx.fillStyle = hair;
+
+  // Necktie or Bow / Scarf
+  ctx.fillStyle = hatType === "crown" ? "#e2b657" : hatType === "scales" ? "#4a3b82" : "#a82e2e";
   ctx.beginPath();
-  ctx.arc(14, 9, 8, Math.PI, Math.PI * 2);
+  ctx.moveTo(-2, -39 + breathe);
+  ctx.lineTo(2, -39 + breathe);
+  ctx.lineTo(3, -29 + breathe);
+  ctx.lineTo(0, -26 + breathe);
+  ctx.lineTo(-3, -29 + breathe);
+  ctx.closePath();
   ctx.fill();
-  if (npc?.hat === "crown" || npc?.hat === "star") {
-    ctx.fillStyle = "#e2b657";
-    ctx.fillRect(7, 2, 14, 4);
+
+  // Gold jacket buttons
+  ctx.fillStyle = "#e5b452";
+  ctx.beginPath();
+  ctx.arc(0, -29 + breathe, 1.5, 0, Math.PI * 2);
+  ctx.arc(0, -24 + breathe, 1.5, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 6. Arms & Official BOE Dossier / Clipboard in Hand
+  // Left arm
+  ctx.fillStyle = suitColor;
+  round(ctx, -18, -39 + breathe, 6, 17, 3);
+  ctx.fill();
+  // Left hand (holding folder)
+  ctx.fillStyle = "#f6d8c3";
+  ctx.beginPath();
+  ctx.arc(-15, -22 + breathe, 3.5, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Official Dossier / Book of Laws in Left Hand
+  ctx.fillStyle = "#8a2434"; // Crimson official leather cover
+  round(ctx, -23, -27 + breathe, 11, 14, 2);
+  ctx.fill();
+  ctx.fillStyle = "#f8f3e8"; // Paper pages trim
+  ctx.fillRect(-14, -25 + breathe, 2, 10);
+  ctx.fillStyle = "#e5b452"; // Gold crest on cover
+  ctx.beginPath();
+  ctx.arc(-18, -20 + breathe, 2, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Right arm & hand
+  ctx.fillStyle = suitColor;
+  round(ctx, 12, -39 + breathe, 6, 17, 3);
+  ctx.fill();
+  ctx.fillStyle = "#f6d8c3";
+  ctx.beginPath();
+  ctx.arc(15, -22 + breathe, 3.5, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 7. Beautiful Chibi Head
+  const headY = -54 + breathe * 0.5;
+
+  // Back hair layer
+  ctx.fillStyle = hairColor;
+  ctx.beginPath();
+  ctx.arc(0, headY, 15, 0, Math.PI * 2);
+  ctx.fill();
+  if (hatType === "bun") {
+    // Elegant bun for Doña Pilar
+    ctx.beginPath();
+    ctx.arc(0, headY - 14, 7, 0, Math.PI * 2);
+    ctx.fill();
   }
-  ctx.fillStyle = "#1b1420";
-  ctx.fillRect(10, 12, 2, 2);
-  ctx.fillRect(16, 12, 2, 2);
+
+  // Soft face skin
+  ctx.fillStyle = "#f6d8c3";
+  ctx.beginPath();
+  ctx.arc(0, headY + 1, 12.5, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Rosy cheeks
+  ctx.fillStyle = "rgba(235, 110, 110, 0.4)";
+  ctx.beginPath();
+  ctx.ellipse(-7, headY + 4, 3, 1.8, 0, 0, Math.PI * 2);
+  ctx.ellipse(7, headY + 4, 3, 1.8, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Detailed Anime / Chibi Eyes (Left & Right)
+  const drawEye = (ex: number) => {
+    // Eye white
+    ctx.fillStyle = "#ffffff";
+    ctx.beginPath();
+    ctx.ellipse(ex, headY, 3.5, 4.5, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Iris (Vibrant color)
+    ctx.fillStyle = hatType === "scales" ? "#34557d" : hatType === "star" ? "#236359" : "#4a2d1d";
+    ctx.beginPath();
+    ctx.ellipse(ex, headY + 0.3, 2.5, 3.5, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Pupil
+    ctx.fillStyle = "#120d18";
+    ctx.beginPath();
+    ctx.arc(ex, headY + 0.5, 1.4, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Specular highlight gleam
+    ctx.fillStyle = "#ffffff";
+    ctx.beginPath();
+    ctx.arc(ex - 0.9, headY - 1.2, 1.1, 0, Math.PI * 2);
+    ctx.arc(ex + 0.9, headY + 1.2, 0.6, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Eyelash line
+    ctx.strokeStyle = "#231818";
+    ctx.lineWidth = 1.3;
+    ctx.beginPath();
+    ctx.arc(ex, headY - 1, 3.4, Math.PI * 1.1, Math.PI * 1.9);
+    ctx.stroke();
+  };
+
+  drawEye(-5);
+  drawEye(5);
+
+  // Friendly curved smile
+  ctx.strokeStyle = "#a24838";
+  ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  ctx.arc(0, headY + 4, 3, 0.2, Math.PI - 0.2);
+  ctx.stroke();
+
+  // Eyebrows
+  ctx.strokeStyle = hairColor;
+  ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  ctx.moveTo(-7, headY - 6);
+  ctx.quadraticCurveTo(-5, headY - 7.5, -2, headY - 6);
+  ctx.moveTo(2, headY - 6);
+  ctx.quadraticCurveTo(5, headY - 7.5, 7, headY - 6);
+  ctx.stroke();
+
+  // Styled Front Bangs / Hair Fringe
+  ctx.fillStyle = hairColor;
+  ctx.beginPath();
+  ctx.moveTo(-13, headY - 3);
+  ctx.quadraticCurveTo(-8, headY - 12, 0, headY - 13);
+  ctx.quadraticCurveTo(8, headY - 12, 13, headY - 3);
+  ctx.quadraticCurveTo(9, headY - 6, 6, headY - 3);
+  ctx.quadraticCurveTo(0, headY - 7, -6, headY - 3);
+  ctx.quadraticCurveTo(-10, headY - 6, -13, headY - 3);
+  ctx.fill();
+
+  // 8. Distinguishing Departmental Headwear / Accessories
+  if (hatType === "crown") {
+    // Golden Crown Insignia for Cortes / Corona
+    ctx.fillStyle = "#f4c653";
+    ctx.beginPath();
+    ctx.moveTo(-8, headY - 12);
+    ctx.lineTo(-6, headY - 17);
+    ctx.lineTo(-2, headY - 13);
+    ctx.lineTo(0, headY - 18);
+    ctx.lineTo(2, headY - 13);
+    ctx.lineTo(6, headY - 17);
+    ctx.lineTo(8, headY - 12);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = "#c83232";
+    ctx.beginPath();
+    ctx.arc(0, headY - 14, 1.2, 0, Math.PI * 2);
+    ctx.fill();
+  } else if (hatType === "star") {
+    // European 12-Star Gold Beret Pin
+    ctx.fillStyle = "#ffd54f";
+    ctx.beginPath();
+    ctx.arc(9, headY - 10, 3, 0, Math.PI * 2);
+    ctx.fill();
+  } else if (hatType === "stamp" || hatType === "abacus") {
+    // Wireframe Tortoiseshell Glasses
+    ctx.strokeStyle = "#8a5828";
+    ctx.lineWidth = 1.2;
+    ctx.strokeRect(-8, headY - 3, 6, 5);
+    ctx.strokeRect(2, headY - 3, 6, 5);
+    ctx.beginPath();
+    ctx.moveTo(-2, headY - 1);
+    ctx.lineTo(2, headY - 1);
+    ctx.stroke();
+  } else {
+    // INAP Official Silver/Gold Lapel Badge
+    ctx.fillStyle = "#f4c653";
+    ctx.beginPath();
+    ctx.arc(7, -34 + breathe, 2, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
   ctx.restore();
 }
 

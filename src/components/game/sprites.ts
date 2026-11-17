@@ -163,3 +163,43 @@ export const SPRITES = {
   sello: "/sprites/npc-sello.png",
   carmen: "/sprites/npc-carmen.png",
 };
+
+export function getNpcSprite(id: string): HTMLCanvasElement | null {
+  // Direct sprite match
+  const directKey = id as keyof typeof SPRITES;
+  if (directKey in SPRITES && SPRITES[directKey]) {
+    const s = getSprite(SPRITES[directKey]);
+    if (s) return s;
+  }
+  // Thematic mentor mapping by civil service department / block
+  // Constitutional, Crown & Parliament -> Doña Pilar (INAP Mentor)
+  if (["pilar", "rodrigo", "heraldo", "leandro", "nuria", "elsa", "rita"].includes(id)) {
+    return getSprite(SPRITES.pilar);
+  }
+  // Judicial, Constitutional Court & Legal Guardians -> Comisaria / Pilar
+  if (["vega", "soler", "comisaria"].includes(id)) {
+    return getSprite(SPRITES.comisaria) ?? getSprite(SPRITES.pilar);
+  }
+  // Europe & International -> Érika Soler (EU Diplomat)
+  if (["erika", "lars", "ada"].includes(id)) {
+    return getSprite(SPRITES.erika);
+  }
+  // Administrative Procedure, Contracts & Property -> Archivera Sello
+  if (["sello", "nico", "petra", "julia"].includes(id)) {
+    return getSprite(SPRITES.sello);
+  }
+  // Public Policies, Social, Digital, Equality & Civil Service -> Jefa Carmen
+  if (["carmen", "hugo", "ana", "bruno", "nilo", "rios", "leo", "samir", "iris", "sol"].includes(id)) {
+    return getSprite(SPRITES.carmen) ?? getSprite(SPRITES.pilar);
+  }
+  // Finance, Budget, Tax & Audit -> Don Aurelio
+  if (["aurelio", "ines", "oro", "luz"].includes(id)) {
+    return getSprite(SPRITES.aurelio);
+  }
+  // Selection Tribunal & Exam -> Comisaria Rivas
+  if (["comisaria", "bit"].includes(id)) {
+    return getSprite(SPRITES.comisaria);
+  }
+  return getSprite(SPRITES.pilar);
+}
+

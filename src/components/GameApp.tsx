@@ -114,6 +114,8 @@ export default function GameApp() {
   const [customQ, setCustomQ] = useState({ prompt: "", options: ["", "", "", ""], correctIndex: 0, explanation: "" });
   const [titlePose, setTitlePose] = useState<"study" | "cheer">("study");
   const [showControls, setShowControls] = useState(false);
+  const [promptText, setPromptText] = useState("");
+  const promptRef = useRef("");
 
   const toggleMute = useCallback(() => {
     const next = audio.toggle();
@@ -192,14 +194,18 @@ export default function GameApp() {
       if (["ArrowLeft", "ArrowRight", "ArrowUp", " ", "KeyM"].includes(event.code)) event.preventDefault();
       if (event.code === "ArrowLeft" || event.code === "KeyA") inputRef.current.left = down;
       if (event.code === "ArrowRight" || event.code === "KeyD") inputRef.current.right = down;
-      if (event.code === "ArrowUp" || event.code === "Space" || event.code === "KeyW" || event.code === "KeyK" || event.code === "KeyZ") {
+      if (event.code === "Space" || event.code === "KeyK" || event.code === "KeyZ") {
+        if (down && !event.repeat) inputRef.current.jumpPressed = true;
+        inputRef.current.jumpHeld = down;
+      }
+      if (event.code === "ArrowUp" || event.code === "KeyW") {
         if (down && !event.repeat) {
           inputRef.current.jumpPressed = true;
           inputRef.current.actionPressed = true;
         }
         inputRef.current.jumpHeld = down;
       }
-      if ((event.code === "KeyE" || event.code === "Enter" || event.code === "KeyJ" || event.code === "KeyW") && down && !event.repeat) {
+      if ((event.code === "KeyE" || event.code === "Enter" || event.code === "KeyJ") && down && !event.repeat) {
         inputRef.current.actionPressed = true;
       }
       if (event.code === "KeyM" && down && !event.repeat) toggleMute();
@@ -245,6 +251,10 @@ export default function GameApp() {
         inputRef.current.actionPressed = false;
         const ctx = canvas.getContext("2d");
         if (ctx) drawRun(ctx, current, w, h);
+        if (current.prompt !== promptRef.current) {
+          promptRef.current = current.prompt;
+          setPromptText(current.prompt);
+        }
         const key = current.pending ? JSON.stringify(current.pending) : "";
         if (key && key !== shownRef.current) {
           shownRef.current = key;
@@ -293,7 +303,6 @@ export default function GameApp() {
       if (isStart) {
         if (now - lastTapRef.current < 320) {
           jump = true;
-          action = true;
         }
         lastTapRef.current = now;
       }
@@ -306,17 +315,20 @@ export default function GameApp() {
         // Zona de movimiento en mitad izquierda (pulgar izquierdo)
         if (relX < 0.22) {
           moveLeft = true;
-        } else if (relX >= 0.22 && relX < 0.46) {
+        } else if (relX >= 0.22 && relX < 0.48) {
           moveRight = true;
         } else {
           // Mitad derecha: saltar al tocar o mantener pulsado
           jump = true;
-          action = true;
         }
 
-        // Tocar tercio superior activa salto / entrar
+        // Tocar tercio superior activa salto
         if (relY < 0.35) {
           jump = true;
+        }
+
+        // Tocar la zona inferior del aviso o pulsar botón de entrar
+        if (relY > 0.78 && relX > 0.22 && relX < 0.78) {
           action = true;
         }
       }
@@ -701,8 +713,8 @@ export default function GameApp() {
           <div className="playfield">
             <div className="controls-hint-bar">
               <span><strong>Mover:</strong> ⬅️ ➡️ o A/D</span>
-              <span><strong>Saltar / Entrar:</strong> ⬆️ o ESPACIO o W</span>
-              <span><strong>Hablar:</strong> E o ENTER</span>
+              <span><strong>Saltar:</strong> ESPACIO o W o ⬆️</span>
+              <span><strong>Hablar / Entrar:</strong> E o ENTER o Botón</span>
             </div>
             <canvas
               ref={canvasRef}
@@ -713,8 +725,27 @@ export default function GameApp() {
             />
             <div className="touch-screen-hints">
               <span className="touch-hint-zone">◀ Pulgar izq: correr ▶</span>
-              <span className="touch-hint-zone">▲ Doble toque o der: saltar</span>
+              <span className="touch-hint-zone">▲ Toque der: saltar</span>
             </div>
+            {promptText && !overlay && !paused && (
+              <button
+                type="button"
+                className="mobile-interact-pill"
+                onTouchStart={(e) => {
+                  e.stopPropagation();
+                  inputRef.current.actionPressed = true;
+                }}
+                onClick={() => {
+                  inputRef.current.actionPressed = true;
+                }}
+              >
+                {promptText.includes("Entrar")
+                  ? "🚪 ENTRAR"
+                  : promptText.includes("Hablar")
+                  ? "💬 HABLAR"
+                  : "✨ ACCIÓN"}
+              </button>
+            )}
             {overlay?.type === "dialogue" && <Dialogue pending={overlay} onQuiz={() => { const current = runRef.current; if (!current) return; if (overlay.topicId) offerNpcQuiz(current); else acceptDialogue(current); showPendingRef.current(current.pending); }} onClose={() => { const current = runRef.current; if (!current) return; acceptDialogue(current); shownRef.current = ""; setOverlay(null); }} />}
             {overlay?.type === "quiz" && (
               <Quiz
@@ -766,7 +797,24 @@ export default function GameApp() {
                   <p>{labelFor(overlay.levelId)}</p>
                   <div className="row">
                     <button className="primary" onClick={() => enter(overlay.levelId)}>Entrar</button>
-                    <button className="ghost" onClick={() => { const current = runRef.current; if (current) closePending(current); shownRef.current = ""; setOverlay(null); }}>Ahora no</button>
+                    <button
+                      className="ghost"
+                      onClick={() => {
+                        const current = runRef.current;
+                        if (current) {
+                          closePending(current);
+                          current.player.x = Math.max(30, current.player.x - 55);
+                          current.player.vx = -160;
+                          current.interactCd = 1.2;
+                        }
+                        inputRef.current.actionPressed = false;
+                        inputRef.current.jumpPressed = false;
+                        shownRef.current = "";
+                        setOverlay(null);
+                      }}
+                    >
+                      Ahora no
+                    </button>
                   </div>
                 </section>
               </div>

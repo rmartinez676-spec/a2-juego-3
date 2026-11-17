@@ -722,9 +722,10 @@ export function step(run: Run, dt: number, input: Input) {
   if (near) {
     const item = near.item;
     if (item.kind === "flag") run.prompt = item.ref === "exam" ? "Entrar al examen" : "Llegar a la meta";
-    else if (item.kind === "npc") run.prompt = `Hablar con ${item.label}`;
-    else if (item.kind === "qblock") run.prompt = "Abrir el bloque ?";
-    else if (item.kind === "boss") run.prompt = "Rebatir al jefe";
+    else if (item.kind === "npc") run.prompt = `💬 Hablar con ${item.label}`;
+    else if (item.kind === "qblock") run.prompt = "❓ Abrir el bloque ?";
+    else if (item.kind === "boss") run.prompt = "⚔️ Rebatir al jefe";
+    else if (item.kind === "portal") run.prompt = `🚪 Entrar a: ${item.label}`;
     else run.prompt = item.label;
     const headHit = item.kind === "qblock" && body.vy < 0 && body.y < item.y + item.h && body.y + body.h > item.y && Math.abs(body.x - item.x) < 40;
     if (item.kind === "flag" && overlaps(body, { x: item.x - 10, y: item.y, w: item.w + 20, h: item.h })) {
@@ -733,13 +734,11 @@ export function step(run: Run, dt: number, input: Input) {
       else win(run);
       return;
     }
-    // Auto-trigger dialogue when passing by an NPC - no need to press Enter!
-    const autoPassNpc = item.kind === "npc" && !run.talked && near.dist < 46;
-    // Enter castle/portal directly by walking through the door or pressing Jump / Up / Action (W, Space, Enter)
-    const portalEnter = item.kind === "portal" && (
-      (near.dist < 26 && body.onGround) ||
-      ((input.actionPressed || input.jumpPressed) && near.dist < 48)
-    );
+    // Auto-trigger dialogue when passing by an NPC in stage mode
+    const autoPassNpc = item.kind === "npc" && !run.talked && near.dist < 38;
+    // Enter castle/portal ONLY with explicit action (Action key E/W/Enter/Up or on-screen action button)
+    // NEVER auto-enter portals simply by walking near them!
+    const portalEnter = item.kind === "portal" && input.actionPressed && near.dist < 56;
 
     if (input.actionPressed || headHit || autoPassNpc || portalEnter) {
       if (item.kind === "npc" && run.topicId) openPending(run, { type: "dialogue", npcId: item.ref, topicId: run.topicId });
@@ -761,7 +760,7 @@ export function acceptDialogue(run: Run) {
   run.talked = true;
   run.pending = null;
   run.paused = false;
-  run.interactCd = 0.4;
+  run.interactCd = 0.8;
 }
 
 export function offerNpcQuiz(run: Run) {
@@ -795,7 +794,7 @@ export function resolveQuiz(run: Run, result: { correct: number; wrong: number; 
 export function closePending(run: Run) {
   run.pending = null;
   run.paused = false;
-  run.interactCd = 0.55;
+  run.interactCd = 1.0;
   if (run.flagX && run.player.x > run.flagX - 70) run.player.x = run.flagX - 110;
 }
 
