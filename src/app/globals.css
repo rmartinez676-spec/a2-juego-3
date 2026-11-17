@@ -8,8 +8,8 @@
   --gold: #e2b657;
   --burgundy: #7c2f3b;
   --line: rgba(36, 24, 18, 0.12);
-  --font-display: "Fraunces", "Iowan Old Style", Palatino, Georgia, serif;
-  --font-body: "Nunito", "Avenir Next", "Segoe UI", sans-serif;
+  --font-display: var(--font-display, "Fraunces"), "Iowan Old Style", Palatino, Georgia, serif;
+  --font-body: var(--font-body, "Nunito"), "Avenir Next", "Segoe UI", sans-serif;
   color: var(--ink);
   background: var(--navy);
   font-family: var(--font-body);

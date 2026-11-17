@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { NPC_BY_ID, TOPIC_BY_ID, TOPICS, WORLDS } from "@/lib/content";
 import { selectQuestions } from "@/lib/questions";
 import type { Difficulty, Question } from "@/lib/types";
@@ -31,6 +31,7 @@ type BoeLaw = { id: string; title: string; fechaHumana?: string | null; fecha?: 
 type BoeView = { summary?: string; laws?: BoeLaw[]; convocatoriaOk?: boolean; inapOk?: boolean; checkedAt?: string };
 
 const emptyInput = (): Input => ({ left: false, right: false, jumpHeld: false, jumpPressed: false, actionPressed: false });
+const emptySubscribe = () => () => {};
 
 function loadId() {
   const existing = window.localStorage.getItem("opos-id");
@@ -81,15 +82,19 @@ export default function GameApp() {
   const inputRef = useRef<Input>(emptyInput());
   const shownRef = useRef("");
   const endRef = useRef("");
-  const [ready, setReady] = useState(false);
+  const ready = useSyncExternalStore(emptySubscribe, () => true, () => false);
   const [tick, setTick] = useState(0);
-  const [playerId, setPlayerId] = useState("");
-  const [name, setName] = useState("Alba");
-  const [difficulty, setDifficulty] = useState<Difficulty>("gestor");
-  const [muted, setMuted] = useState(false);
+  const [playerId, setPlayerId] = useState(() => (typeof window !== "undefined" ? loadId() : ""));
+  const [name, setName] = useState(() => (typeof window !== "undefined" ? window.localStorage.getItem("opos-name") || "Alba" : "Alba"));
+  const [difficulty, setDifficulty] = useState<Difficulty>(() => {
+    if (typeof window === "undefined") return "gestor";
+    const storedDiff = window.localStorage.getItem("opos-difficulty") as Difficulty | null;
+    return storedDiff || "gestor";
+  });
+  const [muted, setMuted] = useState(() => (typeof window !== "undefined" ? window.localStorage.getItem("opos-music-muted") === "1" : false));
   const [screen, setScreen] = useState<"title" | "play" | "codex" | "boe" | "exam">("title");
-  const [progress, setProgress] = useState<Record<string, Save>>({});
-  const [notes, setNotes] = useState<Record<string, string>>({});
+  const [progress, setProgress] = useState<Record<string, Save>>(() => (typeof window !== "undefined" ? readJson("opos-progress", {}) : {}));
+  const [notes, setNotes] = useState<Record<string, string>>(() => (typeof window !== "undefined" ? readJson("opos-notes", {}) : {}));
   const [overlay, setOverlay] = useState<Pending | null>(null);
   const [paused, setPaused] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -114,15 +119,8 @@ export default function GameApp() {
   }, []);
 
   useEffect(() => {
-    const id = loadId();
-    setPlayerId(id);
-    setName(window.localStorage.getItem("opos-name") || "Alba");
-    const storedDiff = window.localStorage.getItem("opos-difficulty") as Difficulty | null;
-    if (storedDiff) setDifficulty(storedDiff);
-    setMuted(window.localStorage.getItem("opos-music-muted") === "1");
-    setProgress(readJson("opos-progress", {}));
-    setNotes(readJson("opos-notes", {}));
-    setReady(true);
+    const id = playerId || (typeof window !== "undefined" ? loadId() : "");
+    if (!id) return;
     void fetch(`/api/progress?playerId=${id}`).then(async (res) => {
       if (!res.ok) return;
       const data = await res.json();
@@ -150,7 +148,7 @@ export default function GameApp() {
       const payload = data.sync?.payload;
       if (payload) setBoe(payload);
     }).catch(() => undefined);
-  }, []);
+  }, [playerId]);
 
   useEffect(() => {
     const fit = () => {
@@ -239,18 +237,18 @@ export default function GameApp() {
         const key = current.pending ? JSON.stringify(current.pending) : "";
         if (key && key !== shownRef.current) {
           shownRef.current = key;
-          setOverlay(current.pending);
+          showPendingRef.current(current.pending);
         }
         if (current.won && endRef.current !== "won") {
           endRef.current = "won";
           const summary = summarize(current);
           setResult(summary);
-          persist(current.levelId, summary, true);
+          persistRef.current(current.levelId, summary, true);
         }
         if (current.failed && endRef.current !== "failed") {
           endRef.current = "failed";
           setFailed(true);
-          persist(current.levelId, null, false);
+          persistRef.current(current.levelId, null, false);
         }
       } else if (canvas && current && paused) {
         const rect = canvas.getBoundingClientRect();
@@ -263,11 +261,36 @@ export default function GameApp() {
     return () => cancelAnimationFrame(frame);
   }, [screen, paused]);
 
-  useEffect(() => {
-    if (overlay?.type !== "quiz") return;
-    setQuestions([]);
-    void beginQuiz(overlay);
-  }, [overlay]);
+  const fetchQuestions = useCallback(async (topicIds: string[], count: number, levelId: string) => {
+    const seed = Date.now();
+    const exclude = readJson<string[]>("opos-seen", []).slice(0, 40).join(",");
+    try {
+      const res = await fetch(`/api/questions?topics=${topicIds.join(",")}&count=${count}&difficulty=${difficulty}&playerId=${playerId}&levelId=${levelId}&seed=${seed}&exclude=${exclude}`);
+      const data = await res.json();
+      if (data.questions?.length) return data.questions as Question[];
+    } catch {
+      /* local bank */
+    }
+    return selectQuestions({ topicIds, difficulty, count, seed, exclude: exclude.split(",").filter(Boolean) });
+  }, [difficulty, playerId]);
+
+  const beginQuiz = useCallback(async (pending: Extract<Pending, { type: "quiz" }>) => {
+    const list = await fetchQuestions(pending.topicIds, pending.count, pending.levelId);
+    setQuestions(list);
+    setQi(0);
+    setPicked(null);
+    setTally({ correct: 0, wrong: 0, blank: 0, ids: [] });
+  }, [fetchQuestions]);
+
+  const showPending = useCallback((pending: Pending | null) => {
+    setOverlay(pending);
+    if (pending?.type === "quiz") {
+      void beginQuiz(pending);
+    }
+  }, [beginQuiz]);
+
+  const showPendingRef = useRef(showPending);
+  showPendingRef.current = showPending;
 
   useEffect(() => {
     if (screen !== "exam" || (examPhase !== "test" && examPhase !== "caso")) return;
@@ -313,6 +336,9 @@ export default function GameApp() {
     }).catch(() => undefined);
   }
 
+  const persistRef = useRef(persist);
+  persistRef.current = persist;
+
   function launch(next: Run) {
     audio.unlock();
     audio.play(next.music);
@@ -337,27 +363,6 @@ export default function GameApp() {
       setScreen("exam");
       setExamPhase("intro");
     } else launch(startStage(levelId, attempts, difficulty));
-  }
-
-  async function fetchQuestions(topicIds: string[], count: number, levelId: string) {
-    const seed = Date.now();
-    const exclude = readJson<string[]>("opos-seen", []).slice(0, 40).join(",");
-    try {
-      const res = await fetch(`/api/questions?topics=${topicIds.join(",")}&count=${count}&difficulty=${difficulty}&playerId=${playerId}&levelId=${levelId}&seed=${seed}&exclude=${exclude}`);
-      const data = await res.json();
-      if (data.questions?.length) return data.questions as Question[];
-    } catch {
-      /* local bank */
-    }
-    return selectQuestions({ topicIds, difficulty, count, seed, exclude: exclude.split(",").filter(Boolean) });
-  }
-
-  async function beginQuiz(pending: Extract<Pending, { type: "quiz" }>) {
-    const list = await fetchQuestions(pending.topicIds, pending.count, pending.levelId);
-    setQuestions(list);
-    setQi(0);
-    setPicked(null);
-    setTally({ correct: 0, wrong: 0, blank: 0, ids: [] });
   }
 
   function finishQuiz(nextTally: { correct: number; wrong: number; blank: number; ids: string[] }) {
@@ -476,7 +481,7 @@ export default function GameApp() {
           </header>
           <div className="playfield">
             <canvas ref={canvasRef} />
-            {overlay?.type === "dialogue" && <Dialogue pending={overlay} onQuiz={() => { const current = runRef.current; if (!current) return; if (overlay.topicId) offerNpcQuiz(current); else acceptDialogue(current); setOverlay(current.pending); }} onClose={() => { const current = runRef.current; if (!current) return; acceptDialogue(current); shownRef.current = ""; setOverlay(null); }} />}
+            {overlay?.type === "dialogue" && <Dialogue pending={overlay} onQuiz={() => { const current = runRef.current; if (!current) return; if (overlay.topicId) offerNpcQuiz(current); else acceptDialogue(current); showPendingRef.current(current.pending); }} onClose={() => { const current = runRef.current; if (!current) return; acceptDialogue(current); shownRef.current = ""; setOverlay(null); }} />}
             {overlay?.type === "quiz" && (
               <Quiz
                 question={currentQuestion}

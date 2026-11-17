@@ -1,6 +1,21 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
+import { Fraunces, Nunito } from "next/font/google";
 import "./globals.css";
+
+const fraunces = Fraunces({
+  subsets: ["latin"],
+  variable: "--font-display",
+  weight: ["600", "700"],
+  display: "swap",
+});
+
+const nunito = Nunito({
+  subsets: ["latin"],
+  variable: "--font-body",
+  weight: ["600", "800"],
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "OPOS · Alba y los 58 temas",
@@ -19,12 +34,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="es">
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-        <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,560;9..144,700&family=Nunito:wght@600;800&display=swap" rel="stylesheet" />
-      </head>
+    <html lang="es" className={`${fraunces.variable} ${nunito.variable}`}>
       <body>{children}</body>
     </html>
   );
