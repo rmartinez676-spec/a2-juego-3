@@ -272,6 +272,8 @@ export default function GameApp() {
     return () => cancelAnimationFrame(frame);
   }, [screen, paused]);
 
+  const lastTapRef = useRef(0);
+
   const handleCanvasTouch = useCallback((e: React.TouchEvent<HTMLCanvasElement>) => {
     if (e.type === "touchstart" || e.type === "touchmove") {
       if (e.cancelable) e.preventDefault();
@@ -284,21 +286,38 @@ export default function GameApp() {
       let jump = false;
       let action = false;
 
+      const now = performance.now();
+      const isStart = e.type === "touchstart";
+
+      // Mario Run style double-tap detection (dos toques rápidos para salto alto)
+      if (isStart) {
+        if (now - lastTapRef.current < 320) {
+          jump = true;
+          action = true;
+        }
+        lastTapRef.current = now;
+      }
+
       for (let i = 0; i < e.touches.length; i++) {
         const touch = e.touches[i];
         const relX = (touch.clientX - rect.left) / rect.width;
         const relY = (touch.clientY - rect.top) / rect.height;
 
-        if (relX < 0.42) {
+        // Zona de movimiento en mitad izquierda (pulgar izquierdo)
+        if (relX < 0.22) {
           moveLeft = true;
-        } else if (relX > 0.58) {
+        } else if (relX >= 0.22 && relX < 0.46) {
           moveRight = true;
         } else {
+          // Mitad derecha: saltar al tocar o mantener pulsado
+          jump = true;
           action = true;
         }
 
-        if (relY < 0.45 || e.touches.length > 1) {
+        // Tocar tercio superior activa salto / entrar
+        if (relY < 0.35) {
           jump = true;
+          action = true;
         }
       }
 
@@ -310,7 +329,7 @@ export default function GameApp() {
         }
         inputRef.current.jumpHeld = true;
       }
-      if (action) {
+      if (action && isStart) {
         inputRef.current.actionPressed = true;
       }
     } else if (e.type === "touchend" || e.type === "touchcancel") {
@@ -318,6 +337,23 @@ export default function GameApp() {
         inputRef.current.left = false;
         inputRef.current.right = false;
         inputRef.current.jumpHeld = false;
+      } else {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const rect = canvas.getBoundingClientRect();
+        let moveLeft = false;
+        let moveRight = false;
+        let jump = false;
+        for (let i = 0; i < e.touches.length; i++) {
+          const touch = e.touches[i];
+          const relX = (touch.clientX - rect.left) / rect.width;
+          if (relX < 0.22) moveLeft = true;
+          else if (relX < 0.46) moveRight = true;
+          else jump = true;
+        }
+        inputRef.current.left = moveLeft;
+        inputRef.current.right = moveRight;
+        inputRef.current.jumpHeld = jump;
       }
     }
   }, []);
@@ -676,9 +712,8 @@ export default function GameApp() {
               onTouchCancel={handleCanvasTouch}
             />
             <div className="touch-screen-hints">
-              <span className="touch-hint-zone">◀ Toca izq para correr</span>
-              <span className="touch-hint-zone">▲ Arriba: saltar / entrar</span>
-              <span className="touch-hint-zone">Toca der para correr ▶</span>
+              <span className="touch-hint-zone">◀ Pulgar izq: correr ▶</span>
+              <span className="touch-hint-zone">▲ Doble toque o der: saltar</span>
             </div>
             {overlay?.type === "dialogue" && <Dialogue pending={overlay} onQuiz={() => { const current = runRef.current; if (!current) return; if (overlay.topicId) offerNpcQuiz(current); else acceptDialogue(current); showPendingRef.current(current.pending); }} onClose={() => { const current = runRef.current; if (!current) return; acceptDialogue(current); shownRef.current = ""; setOverlay(null); }} />}
             {overlay?.type === "quiz" && (
