@@ -240,7 +240,24 @@ function drawEntity(ctx: CanvasRenderingContext2D, run: Run, item: Ent, theme: T
     ctx.fillRect(18, 12, 4, 4);
     ctx.restore();
   } else if (item.kind === "npc") {
-    drawChibi(ctx, item.ref, item.x, item.y, run.time);
+    const spriteKey = item.ref as keyof typeof SPRITES;
+    const spritePath = SPRITES[spriteKey];
+    const sprite = spritePath ? getSprite(spritePath) : null;
+    if (sprite) {
+      const dh = 112;
+      const dw = dh * (sprite.width / sprite.height);
+      const bob = Math.sin(run.time * 2 + item.id) * 2;
+      ctx.save();
+      ctx.translate(item.x + 18, item.y + item.h);
+      ctx.fillStyle = "rgba(40,24,16,.22)";
+      ctx.beginPath();
+      ctx.ellipse(0, 2, 18, 5, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.drawImage(sprite, -dw / 2, -dh + bob + 4, dw, dh);
+      ctx.restore();
+    } else {
+      drawChibi(ctx, item.ref, item.x, item.y, run.time);
+    }
     if (!run.talked && run.mode === "stage") bubble(ctx, item.x + 18, item.y - 16, "!");
   } else if (item.kind === "flag") {
     ctx.fillStyle = theme.ink;
@@ -402,18 +419,19 @@ function drawPlayer(ctx: CanvasRenderingContext2D, run: Run) {
   const jumping = !body.onGround;
   const walking = Math.abs(body.vx) > 24 && body.onGround;
   const sprite = getSprite(jumping ? SPRITES.jump : walking ? SPRITES.walk : SPRITES.stand) ?? getSprite(SPRITES.walk);
-  const dh = jumping ? 118 : 112;
+  const dh = jumping ? 120 : 114;
   ctx.save();
   ctx.translate(body.x + body.w / 2, body.y + body.h);
   ctx.scale(body.face, body.land > 0 ? 0.9 : 1);
-  ctx.fillStyle = "rgba(40,24,16,.2)";
+  ctx.fillStyle = "rgba(40,24,16,.22)";
   ctx.beginPath();
-  ctx.ellipse(0, 2, 16, 4, 0, 0, Math.PI * 2);
+  ctx.ellipse(0, 2, 18, 5, 0, 0, Math.PI * 2);
   ctx.fill();
   if (sprite) {
     const dw = dh * (sprite.width / sprite.height);
     if (run.iframe > 0 && Math.sin(run.time * 30) > 0) ctx.globalAlpha = 0.45;
-    ctx.drawImage(sprite, -dw / 2, -dh + 6, dw, dh);
+    const bob = walking ? Math.sin(run.time * 14) * 2.5 : 0;
+    ctx.drawImage(sprite, -dw / 2, -dh + bob + 4, dw, dh);
   } else {
     ctx.fillStyle = "#d4654a";
     ctx.beginPath();
