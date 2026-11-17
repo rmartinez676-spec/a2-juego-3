@@ -25,21 +25,35 @@ export function chromaTrim(img: CanvasImageSource & { width: number; height: num
   ctx.drawImage(img, 0, 0);
   const image = ctx.getImageData(0, 0, src.width, src.height);
   const d = image.data;
-  const key = keyColor(d);
-  for (let i = 0; i < d.length; i += 4) {
-    const dr = d[i] - key.r;
-    const dg = d[i + 1] - key.g;
-    const db = d[i + 2] - key.b;
-    const dist = Math.sqrt(dr * dr + dg * dg + db * db);
-    const magenta = d[i] > 170 && d[i + 2] > 170 && d[i + 1] < 150;
-    if (dist < 72 || (magenta && dist < 120)) d[i + 3] = 0;
-    else if (dist < 128) d[i + 3] = Math.round((d[i + 3] * (dist - 72)) / 56);
-    if (d[i + 3] < 255 && magenta) {
-      d[i] = Math.min(d[i], 190);
-      d[i + 2] = Math.min(d[i + 2], 190);
+
+  // Check if image already has transparent pixels (like all our PNG sprites)
+  let transparentCount = 0;
+  for (let i = 3; i < d.length; i += 16) {
+    if (d[i] < 30) {
+      transparentCount++;
+      if (transparentCount > 20) break;
     }
   }
-  ctx.putImageData(image, 0, 0);
+
+  // ONLY perform chroma keying if the image is completely opaque (e.g. solid magenta background)
+  if (transparentCount <= 20) {
+    const key = keyColor(d);
+    // Only key out if the corner color is noticeably magenta or high saturation
+    const isMagentaKey = key.r > 150 && key.b > 150 && key.g < 120;
+    if (isMagentaKey) {
+      for (let i = 0; i < d.length; i += 4) {
+        const dr = d[i] - key.r;
+        const dg = d[i + 1] - key.g;
+        const db = d[i + 2] - key.b;
+        const dist = Math.sqrt(dr * dr + dg * dg + db * db);
+        const magenta = d[i] > 170 && d[i + 2] > 170 && d[i + 1] < 150;
+        if (dist < 72 || (magenta && dist < 120)) d[i + 3] = 0;
+        else if (dist < 128) d[i + 3] = Math.round((d[i + 3] * (dist - 72)) / 56);
+      }
+      ctx.putImageData(image, 0, 0);
+    }
+  }
+
   let minX = src.width;
   let minY = src.height;
   let maxX = 0;
@@ -109,6 +123,10 @@ export function preload(srcs: string[]) {
 export const SPRITES = {
   stand: "/sprites/alba-stand.png",
   walk: "/sprites/alba-walk.png",
+  walk0: "/sprites/alba-walk-0.png",
+  walk1: "/sprites/alba-walk-1.png",
+  walk2: "/sprites/alba-walk-2.png",
+  walk3: "/sprites/alba-walk-3.png",
   jump: "/sprites/alba-jump.png",
   cheer: "/sprites/alba-cheer.png",
   pilar: "/sprites/npc-pilar.png",

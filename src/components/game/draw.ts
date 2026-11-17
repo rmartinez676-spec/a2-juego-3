@@ -4,25 +4,151 @@ import { T } from "./engine";
 import { getSprite, SPRITES } from "./sprites";
 
 type Theme = {
-  sky: [string, string, string];
+  sky: [string, string, string, string];
+  mountainFar: string;
+  mountainNear: string;
   hill: string;
   hill2: string;
   ground: string;
+  groundShadow: string;
   top: string;
+  topHighlight: string;
   accent: string;
+  accentGold: string;
   ink: string;
   cloud: string;
+  cloudShadow: string;
 };
 
 const THEMES: Record<string, Theme> = {
-  plaza: { sky: ["#8ec8e8", "#f6d7a8", "#f3b183"], hill: "#d9896a", hill2: "#c46b58", ground: "#c4a574", top: "#efe2c4", accent: "#1f8a8a", ink: "#3a2a22", cloud: "#fff6ea" },
-  carta: { sky: ["#6ea0d4", "#f4e2c4", "#e7c27a"], hill: "#8d3d4a", hill2: "#5c2a34", ground: "#d9c7a2", top: "#f4ead2", accent: "#c6a15b", ink: "#3a241c", cloud: "#fff8ee" },
-  europa: { sky: ["#1d4e89", "#3d7ec2", "#8eb7e6"], hill: "#163a66", hill2: "#0e2744", ground: "#c5d4e4", top: "#f7fbff", accent: "#f2c14e", ink: "#102033", cloud: "#e7f1fb" },
-  jardin: { sky: ["#79c4e2", "#c8ecb8", "#f6e7a8"], hill: "#3e8f62", hill2: "#246b45", ground: "#6aaa58", top: "#d7ef9a", accent: "#e07a3d", ink: "#24361f", cloud: "#f3ffe8" },
-  sello: { sky: ["#5b6ea6", "#c9c4e6", "#f0e6d4"], hill: "#3d3a72", hill2: "#2a2754", ground: "#d9d3c5", top: "#f7f1e4", accent: "#6b4c9a", ink: "#241e33", cloud: "#f4f0ff" },
-  campus: { sky: ["#f0b36a", "#f6d7a2", "#87b8d8"], hill: "#c46a45", hill2: "#8d4630", ground: "#e2c39a", top: "#f8ead4", accent: "#c4523a", ink: "#3a241c", cloud: "#fff4e4" },
-  hacienda: { sky: ["#1f6b58", "#8fd0b8", "#f3e2a8"], hill: "#145744", hill2: "#0d3b2e", ground: "#d9c48a", top: "#f8efc8", accent: "#d4a017", ink: "#1a2e24", cloud: "#f4fff8" },
-  examen: { sky: ["#243044", "#6d5a78", "#e7d3b0"], hill: "#3a2a38", hill2: "#241820", ground: "#cbb89a", top: "#f3e6cf", accent: "#b23a48", ink: "#1b1420", cloud: "#efe6dc" },
+  plaza: {
+    sky: ["#5b9bd5", "#8ec8e8", "#f7deb8", "#f3b183"],
+    mountainFar: "#8199b5",
+    mountainNear: "#6b839f",
+    hill: "#c87d60",
+    hill2: "#ad5a4b",
+    ground: "#baa27a",
+    groundShadow: "#8a7452",
+    top: "#efe5d0",
+    topHighlight: "#fff9ee",
+    accent: "#1c8282",
+    accentGold: "#e5b452",
+    ink: "#33221b",
+    cloud: "#ffffff",
+    cloudShadow: "#e2d5cb",
+  },
+  carta: {
+    sky: ["#4a7eb5", "#79aada", "#f5e6cc", "#e8c582"],
+    mountainFar: "#7b728e",
+    mountainNear: "#5d4e68",
+    hill: "#8c3846",
+    hill2: "#57222c",
+    ground: "#cebc94",
+    groundShadow: "#9b8a65",
+    top: "#f7efe0",
+    topHighlight: "#fffcf5",
+    accent: "#c99e52",
+    accentGold: "#f3cc69",
+    ink: "#321d15",
+    cloud: "#ffffff",
+    cloudShadow: "#ded3c2",
+  },
+  europa: {
+    sky: ["#143b6c", "#24619f", "#528ecf", "#8fb7e6"],
+    mountainFar: "#274872",
+    mountainNear: "#183253",
+    hill: "#13355e",
+    hill2: "#0c233f",
+    ground: "#b8c9dc",
+    groundShadow: "#7c93ae",
+    top: "#f3f8fd",
+    topHighlight: "#ffffff",
+    accent: "#eab438",
+    accentGold: "#ffd566",
+    ink: "#0c1a2c",
+    cloud: "#f4f9ff",
+    cloudShadow: "#c5d7ea",
+  },
+  jardin: {
+    sky: ["#4ba3cd", "#8ad2ed", "#cdf0be", "#f8eba7"],
+    mountainFar: "#529474",
+    mountainNear: "#357053",
+    hill: "#347e55",
+    hill2: "#1e5b3a",
+    ground: "#5e9b4d",
+    groundShadow: "#3d702f",
+    top: "#dff5a6",
+    topHighlight: "#f5ffd9",
+    accent: "#d97136",
+    accentGold: "#f2a64b",
+    ink: "#1d2e18",
+    cloud: "#ffffff",
+    cloudShadow: "#d8ebd0",
+  },
+  sello: {
+    sky: ["#44528c", "#6e7ebf", "#cdc7ec", "#f1e5d7"],
+    mountainFar: "#524d77",
+    mountainNear: "#373256",
+    hill: "#37346b",
+    hill2: "#24214d",
+    ground: "#cec6b7",
+    groundShadow: "#989083",
+    top: "#f6efe3",
+    topHighlight: "#ffffff",
+    accent: "#6b479e",
+    accentGold: "#e2b85a",
+    ink: "#1e182d",
+    cloud: "#ffffff",
+    cloudShadow: "#dad3e8",
+  },
+  campus: {
+    sky: ["#e37b4b", "#f3aa6e", "#f7d8a1", "#9cc7e4"],
+    mountainFar: "#9e5c45",
+    mountainNear: "#773e2b",
+    hill: "#b95c37",
+    hill2: "#833b25",
+    ground: "#d8b78b",
+    groundShadow: "#9f7d54",
+    top: "#f8ecd7",
+    topHighlight: "#fff8ee",
+    accent: "#be4730",
+    accentGold: "#f4ba47",
+    ink: "#331e16",
+    cloud: "#ffffff",
+    cloudShadow: "#e9cfbc",
+  },
+  hacienda: {
+    sky: ["#175445", "#2a826c", "#96d8c0", "#f4e4a9"],
+    mountainFar: "#275c4e",
+    mountainNear: "#134035",
+    hill: "#12513f",
+    hill2: "#0b3629",
+    ground: "#d1ba7c",
+    groundShadow: "#97834a",
+    top: "#f9f1cd",
+    topHighlight: "#fffce8",
+    accent: "#ce9812",
+    accentGold: "#f8cf49",
+    ink: "#15261d",
+    cloud: "#ffffff",
+    cloudShadow: "#cce2d6",
+  },
+  examen: {
+    sky: ["#1c2637", "#3d324c", "#7e627d", "#e3cfa8"],
+    mountainFar: "#3a2d3e",
+    mountainNear: "#241a27",
+    hill: "#342332",
+    hill2: "#1d1219",
+    ground: "#c3af8f",
+    groundShadow: "#8b785d",
+    top: "#f2e4cb",
+    topHighlight: "#fffbf2",
+    accent: "#aa3341",
+    accentGold: "#d9a543",
+    ink: "#170f1a",
+    cloud: "#f5ede4",
+    cloudShadow: "#baa89b",
+  },
 };
 
 function round(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
@@ -44,28 +170,51 @@ export function drawRun(ctx: CanvasRenderingContext2D, run: Run, width: number, 
   const camY = Math.max(0, run.H * T - viewH - 8);
   const shake = run.shake > 0 ? Math.sin(run.time * 50) * 4 : 0;
 
+  // Sky base gradient
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, width, height);
   const sky = ctx.createLinearGradient(0, 0, 0, height);
   sky.addColorStop(0, theme.sky[0]);
-  sky.addColorStop(0.55, theme.sky[1]);
-  sky.addColorStop(1, theme.sky[2]);
+  sky.addColorStop(0.35, theme.sky[1]);
+  sky.addColorStop(0.72, theme.sky[2]);
+  sky.addColorStop(1, theme.sky[3]);
   ctx.fillStyle = sky;
   ctx.fillRect(0, 0, width, height);
 
+  // World layer
   ctx.setTransform(scale * dpr, 0, 0, scale * dpr, (-camX * scale + shake) * dpr, -camY * scale * dpr);
   drawBackdrop(ctx, run, theme, camX, viewW, viewH, camY);
   drawTiles(ctx, run, theme, camX, viewW);
-  run.entities.filter((item) => !item.dead && item.kind !== "paper").forEach((item) => drawEntity(ctx, run, item, theme));
+
+  // Entities behind player
+  run.entities
+    .filter((item) => !item.dead && item.kind !== "paper")
+    .forEach((item) => drawEntity(ctx, run, item, theme));
+
+  // Player
   drawPlayer(ctx, run);
-  run.entities.filter((item) => item.kind === "paper" && !item.dead).forEach((item) => {
-    ctx.fillStyle = "#f7f1e4";
-    ctx.fillRect(item.x, item.y, 16, 12);
-    ctx.strokeStyle = theme.ink;
-    ctx.strokeRect(item.x, item.y, 16, 12);
-  });
+
+  // Floating paper notes / articles collected
+  run.entities
+    .filter((item) => item.kind === "paper" && !item.dead)
+    .forEach((item) => {
+      ctx.save();
+      ctx.translate(item.x + 8, item.y + 6);
+      ctx.rotate(Math.sin(run.time * 3 + item.id) * 0.15);
+      ctx.fillStyle = "#fffdfa";
+      ctx.fillRect(-9, -7, 18, 14);
+      ctx.strokeStyle = theme.ink;
+      ctx.lineWidth = 1;
+      ctx.strokeRect(-9, -7, 18, 14);
+      ctx.fillStyle = theme.accent;
+      ctx.fillRect(-6, -3, 12, 2);
+      ctx.fillRect(-6, 1, 8, 2);
+      ctx.restore();
+    });
+
   if (run.hint && run.hintT > 0) drawBit(ctx, run, theme);
 
+  // Screen UI overlay
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   drawHud(ctx, run, width);
   if (run.bannerT > 0) drawBanner(ctx, run, width);
@@ -73,94 +222,275 @@ export function drawRun(ctx: CanvasRenderingContext2D, run: Run, width: number, 
   if (run.prompt) drawPrompt(ctx, run.prompt, width, height);
 }
 
-function drawBackdrop(ctx: CanvasRenderingContext2D, run: Run, theme: Theme, camX: number, viewW: number, viewH: number, camY: number) {
-  const sunX = 180 - camX * 0.05;
-  ctx.fillStyle = "rgba(255,244,214,0.9)";
+function drawBackdrop(
+  ctx: CanvasRenderingContext2D,
+  run: Run,
+  theme: Theme,
+  camX: number,
+  viewW: number,
+  viewH: number,
+  camY: number,
+) {
+  // 1. Radiant Sun with atmospheric glow
+  const sunX = camX + viewW * 0.72 - (camX * 0.04) % (viewW * 1.2);
+  const sunY = camY + 84;
+  const glow = ctx.createRadialGradient(sunX, sunY, 15, sunX, sunY, 180);
+  glow.addColorStop(0, "rgba(255, 250, 220, 0.95)");
+  glow.addColorStop(0.2, "rgba(255, 225, 160, 0.45)");
+  glow.addColorStop(0.5, "rgba(255, 200, 140, 0.18)");
+  glow.addColorStop(1, "rgba(255, 180, 120, 0)");
+  ctx.fillStyle = glow;
   ctx.beginPath();
-  ctx.arc(sunX, camY + 78, 42, 0, Math.PI * 2);
+  ctx.arc(sunX, sunY, 180, 0, Math.PI * 2);
   ctx.fill();
-  for (let i = 0; i < 5; i++) {
-    const x = ((i * 280 - camX * 0.15) % (viewW + 400)) - 80;
-    ctx.fillStyle = theme.cloud;
-    ctx.globalAlpha = 0.8;
-    ctx.beginPath();
-    ctx.ellipse(camX + x, camY + 70 + (i % 3) * 18, 54, 18, 0, 0, Math.PI * 2);
-    ctx.ellipse(camX + x + 36, camY + 64 + (i % 3) * 18, 34, 16, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.globalAlpha = 1;
-  }
-  const base = camY + viewH - 150;
+
+  ctx.fillStyle = "#ffffff";
+  ctx.beginPath();
+  ctx.arc(sunX, sunY, 32, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 2. Distant Sierra de Guadarrama Mountain Ridges (Layer 1 - Far)
+  const mountainBase = camY + viewH - 120;
+  ctx.fillStyle = theme.mountainFar;
+  ctx.globalAlpha = 0.55;
+  drawMountainRidge(ctx, camX - 100, mountainBase - 40, viewW + 200, 120, 50, camX * 0.07);
+
+  // Mountain Ridge (Layer 2 - Near)
+  ctx.fillStyle = theme.mountainNear;
+  ctx.globalAlpha = 0.65;
+  drawMountainRidge(ctx, camX - 100, mountainBase - 15, viewW + 200, 110, 40, camX * 0.14 + 180);
+  ctx.globalAlpha = 1;
+
+  // 3. Volumetric Clouds with Depth
+  drawClouds(ctx, theme, camX, camY, viewW);
+
+  // 4. Rolling park hills behind the city
   ctx.fillStyle = theme.hill2;
-  wave(ctx, camX - 40, base, viewW + 80, 180, 90, camX * 0.25);
+  wave(ctx, camX - 60, mountainBase + 10, viewW + 120, 140, 48, camX * 0.22);
   ctx.fillStyle = theme.hill;
-  wave(ctx, camX - 40, base + 28, viewW + 80, 170, 70, camX * 0.4);
-  drawSkyline(ctx, run.theme, camX, camY + viewH - 210, viewW);
+  wave(ctx, camX - 60, mountainBase + 34, viewW + 120, 130, 36, camX * 0.35 + 80);
+
+  // 5. Rich Madrid Architecture & Institutional Skyline
+  drawSkyline(ctx, run.theme, theme, camX, camY + viewH - 170, viewW);
+}
+
+function drawMountainRidge(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  amp: number,
+  shift: number,
+) {
+  ctx.beginPath();
+  ctx.moveTo(x, y + h);
+  ctx.lineTo(x, y);
+  const step = 45;
+  for (let i = 0; i <= w; i += step) {
+    const s = Math.sin((i + shift) * 0.009) * amp * 0.7 + Math.sin((i + shift) * 0.022) * amp * 0.3;
+    ctx.lineTo(x + i, y - s);
+  }
+  ctx.lineTo(x + w, y + h);
+  ctx.fill();
 }
 
 function wave(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, amp: number, shift: number) {
   ctx.beginPath();
   ctx.moveTo(x, y + h);
   ctx.lineTo(x, y);
-  for (let i = 0; i <= w; i += 20) ctx.lineTo(x + i, y - Math.sin((i + shift) / 80) * amp);
+  for (let i = 0; i <= w; i += 24) ctx.lineTo(x + i, y - Math.sin((i + shift) / 85) * amp);
   ctx.lineTo(x + w, y + h);
   ctx.fill();
 }
 
-function drawSkyline(ctx: CanvasRenderingContext2D, theme: string, camX: number, y: number, viewW: number) {
-  const start = Math.floor(camX / 90) * 90 - 90;
-  for (let x = start; x < camX + viewW + 120; x += 90) {
-    const n = Math.abs(Math.floor(x / 90));
-    const h = 50 + (n % 5) * 18;
-    const px = x - camX * 0.45;
+function drawClouds(ctx: CanvasRenderingContext2D, theme: Theme, camX: number, camY: number, viewW: number) {
+  // High wispy layer
+  ctx.fillStyle = theme.cloud;
+  ctx.globalAlpha = 0.45;
+  for (let i = 0; i < 4; i++) {
+    const cx = (((i * 420 - camX * 0.08) % (viewW + 500)) + viewW + 500) % (viewW + 500) - 150;
+    const cy = camY + 45 + (i % 3) * 16;
+    ctx.beginPath();
+    ctx.ellipse(camX + cx, cy, 75, 14, 0, 0, Math.PI * 2);
+    ctx.ellipse(camX + cx + 45, cy - 3, 50, 12, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Fluffy cumulus layer with highlights
+  for (let i = 0; i < 5; i++) {
+    const cx = (((i * 320 - camX * 0.18) % (viewW + 480)) + viewW + 480) % (viewW + 480) - 120;
+    const cy = camY + 75 + (i % 4) * 22;
+
+    // Cloud shadow underside
+    ctx.fillStyle = theme.cloudShadow;
+    ctx.globalAlpha = 0.7;
+    ctx.beginPath();
+    ctx.ellipse(camX + cx, cy + 8, 64, 22, 0, 0, Math.PI * 2);
+    ctx.ellipse(camX + cx + 42, cy + 6, 48, 18, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Cloud bright body
+    ctx.fillStyle = theme.cloud;
+    ctx.globalAlpha = 0.95;
+    ctx.beginPath();
+    ctx.ellipse(camX + cx, cy, 60, 24, 0, 0, Math.PI * 2);
+    ctx.ellipse(camX + cx + 32, cy - 8, 42, 22, 0, 0, Math.PI * 2);
+    ctx.ellipse(camX + cx - 28, cy + 2, 36, 18, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+
+function drawSkyline(
+  ctx: CanvasRenderingContext2D,
+  themeKey: string,
+  theme: Theme,
+  camX: number,
+  y: number,
+  viewW: number,
+) {
+  const blockW = 120;
+  const start = Math.floor(camX / blockW) * blockW - blockW;
+  for (let x = start; x < camX + viewW + blockW * 2; x += blockW) {
+    const n = Math.abs(Math.floor(x / blockW));
+    const h = 75 + (n % 4) * 24 + ((n * 3) % 5) * 8;
+    const px = x - camX * 0.42;
+
     ctx.save();
     ctx.translate(px, y - h);
-    if (theme === "europa") {
-      ctx.fillStyle = n % 2 ? "#245c92" : "#1a446f";
-      round(ctx, 8, 20, 70, h, 8);
+
+    if (themeKey === "europa") {
+      // European Community architecture (Brussels / Berlaymont inspired)
+      ctx.fillStyle = n % 2 ? "#1f4a76" : "#17385a";
+      round(ctx, 6, 12, 108, h + 20, 6);
       ctx.fill();
-      ctx.fillStyle = "#f2c14e";
+      // Glass curtain wall windows
+      ctx.fillStyle = "#8ec4eb";
+      ctx.globalAlpha = 0.65;
+      for (let r = 24; r < h; r += 16) {
+        for (let c = 14; c < 100; c += 18) {
+          ctx.fillRect(c, r, 12, 10);
+        }
+      }
+      ctx.globalAlpha = 1;
+      // Golden star emblem
+      ctx.fillStyle = "#ffd54f";
       ctx.beginPath();
-      ctx.arc(42, 8, 7, 0, Math.PI * 2);
+      ctx.arc(60, 6, 8, 0, Math.PI * 2);
       ctx.fill();
-    } else if (theme === "carta") {
-      ctx.fillStyle = "#f4ead2";
-      ctx.fillRect(16, 24, 18, h);
-      ctx.fillRect(48, 10, 16, h + 14);
-      ctx.fillStyle = "#7c2f3b";
-      ctx.fillRect(10, 18, 62, 10);
-    } else if (theme === "jardin") {
-      ctx.fillStyle = ["#2f6b4f", "#c46a2a", "#7a3e78", "#2f8f8a"][n % 4];
-      round(ctx, 12, 30, 64, h - 10, 10);
-      ctx.fill();
-      ctx.fillStyle = "#d7ef9a";
-      ctx.beginPath();
-      ctx.arc(44, 18, 16, 0, Math.PI * 2);
-      ctx.fill();
-    } else if (theme === "sello") {
-      ctx.fillStyle = "#3d3a72";
-      round(ctx, 18, 16, 48, h, 6);
-      ctx.fill();
-      ctx.fillStyle = "#e7d7a8";
-      ctx.fillRect(30, h - 16, 24, 16);
-    } else if (theme === "hacienda") {
-      ctx.fillStyle = "#14624f";
-      round(ctx, 10, 20, 68, h, 4);
-      ctx.fill();
-      ctx.fillStyle = "#e2b657";
-      ctx.fillRect(18, 8, 52, 10);
-    } else if (theme === "examen") {
-      ctx.fillStyle = "#2a2438";
-      ctx.fillRect(12, 8, 64, h + 10);
-      ctx.fillStyle = "#e7d3b0";
-      for (let w = 0; w < 3; w++) ctx.fillRect(22 + w * 16, 20, 8, 18);
     } else {
-      ctx.fillStyle = n % 2 ? "#e7b089" : "#f0d2ae";
-      ctx.fillRect(8, 28, 72, h);
-      ctx.fillStyle = "#8d3d4a";
+      // Madrid Neoclassical & Institutional Façades (INAP / Ministerios / Gran Vía)
+      const isCornerDome = n % 4 === 1;
+      const isClockTower = n % 4 === 3;
+      const wallColor = n % 2 ? "#f4dfc3" : "#eed5b4";
+      const trimColor = "#d6b58e";
+
+      // Main facade body
+      ctx.fillStyle = wallColor;
+      ctx.fillRect(8, 20, 104, h);
+
+      // Classical stone cornice / entablature
+      ctx.fillStyle = trimColor;
+      ctx.fillRect(4, 14, 112, 8);
+      ctx.fillRect(6, 6, 108, 6);
+
+      // Balustrade on rooftop
+      ctx.fillStyle = "#bfa07c";
+      ctx.fillRect(10, 0, 100, 3);
+      for (let b = 12; b < 105; b += 8) {
+        ctx.fillRect(b, 3, 3, 4);
+      }
+
+      // Windows with warm interior light
+      for (let wy = 30; wy < h - 12; wy += 26) {
+        for (let wx = 18; wx < 100; wx += 28) {
+          // Arched window surround
+          ctx.fillStyle = trimColor;
+          ctx.fillRect(wx - 2, wy - 3, 20, 22);
+          ctx.beginPath();
+          ctx.arc(wx + 8, wy - 3, 10, Math.PI, Math.PI * 2);
+          ctx.fill();
+
+          // Glass with warm glowing light
+          ctx.fillStyle = "rgba(255, 235, 160, 0.88)";
+          ctx.fillRect(wx, wy, 16, 17);
+          ctx.beginPath();
+          ctx.arc(wx + 8, wy, 8, Math.PI, Math.PI * 2);
+          ctx.fill();
+
+          // Dark window sash / mullions
+          ctx.fillStyle = "#4a3528";
+          ctx.fillRect(wx + 7, wy - 6, 2, 23);
+          ctx.fillRect(wx, wy + 8, 16, 2);
+        }
+      }
+
+      // Feature: Madrid Slate Mansard Dome or Clock Tower
+      if (isCornerDome) {
+        // Paris/Madrid zinc-slate dome
+        ctx.fillStyle = "#485263";
+        ctx.beginPath();
+        ctx.moveTo(34, 6);
+        ctx.bezierCurveTo(34, -28, 86, -28, 86, 6);
+        ctx.fill();
+        // Brass finial
+        ctx.fillStyle = "#e5b452";
+        ctx.fillRect(58, -36, 4, 10);
+        ctx.beginPath();
+        ctx.arc(60, -38, 5, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (isClockTower) {
+        // Institutional clock tower
+        ctx.fillStyle = "#d6b58e";
+        ctx.fillRect(42, -26, 36, 32);
+        ctx.fillStyle = "#eed5b4";
+        ctx.fillRect(45, -23, 30, 26);
+        // Clock face
+        ctx.fillStyle = "#ffffff";
+        ctx.beginPath();
+        ctx.arc(60, -10, 10, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = "#3a2218";
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        // Clock hands
+        ctx.fillStyle = "#3a2218";
+        ctx.fillRect(59, -16, 2, 7);
+        ctx.fillRect(60, -11, 5, 2);
+
+        // Flagpole with waving Spanish / Institutional flag
+        ctx.fillStyle = "#695e57";
+        ctx.fillRect(59, -50, 2, 24);
+        ctx.fillStyle = "#c43328";
+        ctx.fillRect(61, -49, 18, 11);
+        ctx.fillStyle = "#f3bf2e";
+        ctx.fillRect(61, -46, 18, 5);
+      } else {
+        // Classical triangular pediment (Frontón clásico)
+        ctx.fillStyle = trimColor;
+        ctx.beginPath();
+        ctx.moveTo(20, 6);
+        ctx.lineTo(60, -14);
+        ctx.lineTo(100, 6);
+        ctx.fill();
+        ctx.fillStyle = wallColor;
+        ctx.beginPath();
+        ctx.moveTo(26, 6);
+        ctx.lineTo(60, -9);
+        ctx.lineTo(94, 6);
+        ctx.fill();
+      }
+
+      // Classical Madrid park tree in front of facade gap
+      ctx.fillStyle = "#4a6838";
       ctx.beginPath();
-      ctx.moveTo(4, 30);
-      ctx.lineTo(44, 4);
-      ctx.lineTo(84, 30);
+      ctx.arc(114, h - 16, 18, 0, Math.PI * 2);
+      ctx.arc(118, h - 30, 14, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#3d572d";
+      ctx.beginPath();
+      ctx.arc(116, h - 14, 14, 0, Math.PI * 2);
       ctx.fill();
     }
     ctx.restore();
@@ -170,104 +500,252 @@ function drawSkyline(ctx: CanvasRenderingContext2D, theme: string, camX: number,
 function drawTiles(ctx: CanvasRenderingContext2D, run: Run, theme: Theme, camX: number, viewW: number) {
   const x0 = Math.max(0, Math.floor(camX / T) - 1);
   const x1 = Math.min(run.W - 1, Math.ceil((camX + viewW) / T) + 1);
+
   for (let y = 0; y < run.H; y++) {
     for (let x = x0; x <= x1; x++) {
       const tile = run.tiles[y * run.W + x];
       if (!tile) continue;
       const px = x * T;
       const py = y * T;
+
       if (tile === 2) {
-        ctx.fillStyle = theme.accent;
-        round(ctx, px + 2, py + 8, T - 4, 14, 7);
+        // Floating platform: Classical carved stone balcony / shelf
+        // Top stone moulding
+        ctx.fillStyle = theme.topHighlight;
+        round(ctx, px, py + 6, T, 6, 2);
         ctx.fill();
-        ctx.fillStyle = "rgba(255,255,255,.35)";
-        ctx.fillRect(px + 8, py + 11, T - 20, 3);
+
+        ctx.fillStyle = theme.top;
+        ctx.fillRect(px, py + 12, T, 8);
+
+        // Gold inlay trim
+        ctx.fillStyle = theme.accentGold;
+        ctx.fillRect(px + 4, py + 15, T - 8, 2);
+
+        // Classical stone bracket corbels underneath (ménsulas de piedra)
+        ctx.fillStyle = theme.ground;
+        // Left corbel
+        ctx.beginPath();
+        ctx.moveTo(px + 4, py + 20);
+        ctx.lineTo(px + 12, py + 20);
+        ctx.lineTo(px + 6, py + 32);
+        ctx.lineTo(px + 4, py + 20);
+        ctx.fill();
+
+        // Right corbel
+        ctx.beginPath();
+        ctx.moveTo(px + T - 12, py + 20);
+        ctx.lineTo(px + T - 4, py + 20);
+        ctx.lineTo(px + T - 4, py + 32);
+        ctx.lineTo(px + T - 12, py + 20);
+        ctx.fill();
+
+        ctx.fillStyle = "rgba(0,0,0,0.12)";
+        ctx.fillRect(px, py + 19, T, 2);
         continue;
       }
+
+      // Solid ground tile (tile === 1)
       const exposed = y === 0 || run.tiles[(y - 1) * run.W + x] !== 1;
-      ctx.fillStyle = exposed ? theme.top : theme.ground;
-      ctx.fillRect(px, py, T + 1, T + 1);
+
       if (exposed) {
+        // Granite cobblestone paving (Adoquines de granito con bordillo)
+        // 1. Base stone fill
         ctx.fillStyle = theme.ground;
-        ctx.fillRect(px, py + 14, T + 1, T - 13);
+        ctx.fillRect(px, py, T, T);
+
+        // 2. Granite curb top slab (Bordillo pulido)
+        ctx.fillStyle = theme.top;
+        ctx.fillRect(px, py, T, 14);
+
+        // 3. Highlighted beveled top edge
+        ctx.fillStyle = theme.topHighlight;
+        ctx.fillRect(px, py, T, 3);
+
+        // 4. Accent mortar band under curb
         ctx.fillStyle = theme.accent;
-        ctx.fillRect(px, py + 12, T + 1, 4);
+        ctx.fillRect(px, py + 12, T, 3);
+
+        // 5. Granite pavers with bevels & mortar joints
+        ctx.fillStyle = "rgba(255,255,255,0.22)";
+        ctx.fillRect(px + 2, py + 18, 20, 11);
+        ctx.fillRect(px + 26, py + 18, 20, 11);
+        ctx.fillRect(px + 12, py + 32, 22, 12);
+
+        ctx.strokeStyle = "rgba(45,30,20,0.18)";
+        ctx.lineWidth = 1;
+        ctx.strokeRect(px + 1, py + 17, 22, 13);
+        ctx.strokeRect(px + 25, py + 17, 22, 13);
+        ctx.strokeRect(px + 11, py + 31, 24, 14);
+
+        // Vertical curb joints
+        ctx.fillStyle = "rgba(0,0,0,0.2)";
+        ctx.fillRect(px + 23, py, 1.5, 12);
+      } else {
+        // Deep foundational ashlar masonry (Sillares de cantería maciza)
+        ctx.fillStyle = theme.groundShadow;
+        ctx.fillRect(px, py, T, T);
+
+        ctx.fillStyle = theme.ground;
+        ctx.fillRect(px + 1, py + 1, T - 2, T - 2);
+
+        // Subtle stone texture & joints
+        ctx.strokeStyle = "rgba(0,0,0,0.15)";
+        ctx.lineWidth = 1;
+        ctx.strokeRect(px + 0.5, py + 0.5, T, T);
+
+        // Alternating brick seam
+        const row = y % 2;
+        const seamX = row === 0 ? px + 24 : px + 12;
+        ctx.fillStyle = "rgba(0,0,0,0.18)";
+        ctx.fillRect(seamX, py, 1.5, T);
       }
-      ctx.strokeStyle = "rgba(0,0,0,0.06)";
-      ctx.strokeRect(px + 0.5, py + 0.5, T, T);
     }
   }
 }
 
 function drawEntity(ctx: CanvasRenderingContext2D, run: Run, item: Ent, theme: Theme) {
   const bob = Math.sin(run.time * 3 + item.id) * 3;
+
   if (item.kind === "article") {
+    // Collectible Spanish Constitution Article Seal
     ctx.save();
     ctx.translate(item.x + 11, item.y + bob);
-    ctx.fillStyle = "#e2b657";
+
+    // Glowing aura
+    const aura = ctx.createRadialGradient(0, 0, 4, 0, 0, 18);
+    aura.addColorStop(0, "rgba(248, 215, 95, 0.65)");
+    aura.addColorStop(1, "rgba(248, 215, 95, 0)");
+    ctx.fillStyle = aura;
     ctx.beginPath();
-    ctx.arc(0, 0, 11, 0, Math.PI * 2);
+    ctx.arc(0, 0, 18, 0, Math.PI * 2);
     ctx.fill();
-    ctx.fillStyle = "#7c2f3b";
-    ctx.font = "bold 12px Georgia";
+
+    // Gold coin body
+    ctx.fillStyle = "#e5b452";
+    ctx.beginPath();
+    ctx.arc(0, 0, 12, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = "#8b3820";
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    ctx.fillStyle = "#8b3820";
+    ctx.font = "bold 13px Georgia";
     ctx.textAlign = "center";
-    ctx.fillText("§", 0, 4);
+    ctx.fillText("§", 0, 4.5);
     ctx.restore();
   } else if (item.kind === "qblock") {
+    // Official Exam Question Box
     ctx.save();
     ctx.translate(item.x, item.y + (item.used ? 0 : bob));
-    ctx.fillStyle = item.used ? "#b9a48a" : "#e2b657";
+    ctx.fillStyle = item.used ? "#9d8d7b" : "#e5b452";
     round(ctx, 0, 0, 36, 36, 8);
+    ctx.fill();
+    ctx.strokeStyle = theme.ink;
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+
+    // Rivets
+    ctx.fillStyle = theme.ink;
+    ctx.fillRect(3, 3, 3, 3);
+    ctx.fillRect(30, 3, 3, 3);
+    ctx.fillRect(3, 30, 3, 3);
+    ctx.fillRect(30, 30, 3, 3);
+
+    ctx.fillStyle = theme.ink;
+    ctx.font = "bold 22px Georgia";
+    ctx.textAlign = "center";
+    ctx.fillText(item.used ? "·" : "?", 18, 26);
+    ctx.restore();
+  } else if (item.kind === "enemy") {
+    // Bureaucratic Obstacle / Exam Trap
+    ctx.save();
+    ctx.translate(item.x, item.y + Math.abs(Math.sin(run.time * 6 + item.id)) * 3);
+    ctx.fillStyle = "#f5efe6";
+    round(ctx, 0, 4, 32, 26, 8);
     ctx.fill();
     ctx.strokeStyle = theme.ink;
     ctx.lineWidth = 2;
     ctx.stroke();
+
+    // Glasses & stern eyes
     ctx.fillStyle = theme.ink;
-    ctx.font = "bold 20px Georgia";
-    ctx.textAlign = "center";
-    ctx.fillText(item.used ? "·" : "?", 18, 25);
-    ctx.restore();
-  } else if (item.kind === "enemy") {
-    ctx.save();
-    ctx.translate(item.x, item.y + Math.abs(Math.sin(run.time * 6 + item.id)) * 2);
-    ctx.fillStyle = "#f4efe6";
-    round(ctx, 0, 4, 30, 24, 8);
-    ctx.fill();
-    ctx.strokeStyle = theme.ink;
-    ctx.stroke();
-    ctx.fillStyle = theme.ink;
-    ctx.fillRect(7, 12, 4, 4);
-    ctx.fillRect(18, 12, 4, 4);
+    ctx.strokeRect(5, 10, 8, 8);
+    ctx.strokeRect(19, 10, 8, 8);
+    ctx.fillRect(13, 13, 6, 2);
+    ctx.fillRect(8, 13, 3, 3);
+    ctx.fillRect(22, 13, 3, 3);
     ctx.restore();
   } else if (item.kind === "npc") {
     const spriteKey = item.ref as keyof typeof SPRITES;
     const spritePath = SPRITES[spriteKey];
     const sprite = spritePath ? getSprite(spritePath) : null;
+
+    // Glowing interaction circle on the ground
+    ctx.save();
+    ctx.translate(item.x + 18, item.y + item.h);
+
+    const pulse = 0.5 + Math.sin(run.time * 3.5) * 0.25;
+    const ring = ctx.createRadialGradient(0, 2, 4, 0, 2, 28);
+    ring.addColorStop(0, `rgba(244, 192, 70, ${0.4 * pulse})`);
+    ring.addColorStop(0.7, `rgba(244, 192, 70, ${0.2 * pulse})`);
+    ring.addColorStop(1, "rgba(244, 192, 70, 0)");
+    ctx.fillStyle = ring;
+    ctx.beginPath();
+    ctx.ellipse(0, 2, 28, 9, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Soft drop shadow
+    ctx.fillStyle = "rgba(35, 20, 14, 0.32)";
+    ctx.beginPath();
+    ctx.ellipse(0, 2, 20, 6, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    const dh = 114;
+    const bobNpc = Math.sin(run.time * 2.2 + item.id) * 2;
+
     if (sprite) {
-      const dh = 112;
       const dw = dh * (sprite.width / sprite.height);
-      const bob = Math.sin(run.time * 2 + item.id) * 2;
-      ctx.save();
-      ctx.translate(item.x + 18, item.y + item.h);
-      ctx.fillStyle = "rgba(40,24,16,.22)";
-      ctx.beginPath();
-      ctx.ellipse(0, 2, 18, 5, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.drawImage(sprite, -dw / 2, -dh + bob + 4, dw, dh);
-      ctx.restore();
+      ctx.drawImage(sprite, -dw / 2, -dh + bobNpc + 4, dw, dh);
     } else {
-      drawChibi(ctx, item.ref, item.x, item.y, run.time);
+      drawChibi(ctx, item.ref, -22, -dh + bobNpc + 24, run.time);
     }
-    if (!run.talked && run.mode === "stage") bubble(ctx, item.x + 18, item.y - 16, "!");
+    ctx.restore();
+
+    // Callout bubble when not yet spoken to
+    if (!run.talked && run.mode === "stage") {
+      bubble(ctx, item.x - 2, item.y - 20, "💬 [E] Hablar");
+    }
   } else if (item.kind === "flag") {
-    ctx.fillStyle = theme.ink;
-    ctx.fillRect(item.x + 6, item.y, 4, item.h);
+    // Official Tribunal Finish Flag
+    ctx.save();
+    ctx.translate(item.x, item.y);
+    // Flagpole with bronze finial
+    ctx.fillStyle = "#8a7566";
+    ctx.fillRect(6, 0, 5, item.h);
+    ctx.fillStyle = "#e5b452";
+    ctx.beginPath();
+    ctx.arc(8.5, 0, 6, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Spanish / Institutional double-pennant
+    const waveFlag = Math.sin(run.time * 4.5) * 3;
     ctx.fillStyle = item.ref === "exam" ? "#b23a48" : theme.accent;
     ctx.beginPath();
-    ctx.moveTo(item.x + 10, item.y + 6);
-    ctx.lineTo(item.x + 42, item.y + 18 + Math.sin(run.time * 4) * 2);
-    ctx.lineTo(item.x + 10, item.y + 30);
+    ctx.moveTo(11, 4);
+    ctx.lineTo(46, 16 + waveFlag);
+    ctx.lineTo(11, 32);
     ctx.fill();
+
+    // Gold stripe inside flag
+    ctx.fillStyle = "#f4c653";
+    ctx.beginPath();
+    ctx.moveTo(11, 10);
+    ctx.lineTo(40, 18 + waveFlag);
+    ctx.lineTo(11, 26);
+    ctx.fill();
+    ctx.restore();
   } else if (item.kind === "portal" || item.kind === "panel") {
     drawBuilding(ctx, item, theme, run.time);
   } else if (item.kind === "boss") {
@@ -284,26 +762,74 @@ function drawEntity(ctx: CanvasRenderingContext2D, run: Run, item: Ent, theme: T
 }
 
 function drawBuilding(ctx: CanvasRenderingContext2D, item: Ent, theme: Theme, time: number) {
+  // Magnificent Institutional Ministry / Tribunal Entrance Portico
   ctx.save();
   ctx.translate(item.x, item.y);
-  ctx.fillStyle = theme.ink;
-  round(ctx, 4, 28, item.w - 8, item.h - 28, 8);
-  ctx.fill();
+
+  // Building facade block
   ctx.fillStyle = theme.top;
-  ctx.fillRect(10, 40, item.w - 20, item.h - 52);
+  round(ctx, 4, 24, item.w - 8, item.h - 24, 6);
+  ctx.fill();
+  ctx.strokeStyle = theme.ground;
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Neoclassical pediment (frontón) on top
   ctx.fillStyle = theme.accent;
   ctx.beginPath();
-  ctx.moveTo(0, 36);
-  ctx.lineTo(item.w / 2, 8 + Math.sin(time + item.id) * 0);
-  ctx.lineTo(item.w, 36);
+  ctx.moveTo(0, 32);
+  ctx.lineTo(item.w / 2, 4);
+  ctx.lineTo(item.w, 32);
   ctx.fill();
-  ctx.fillStyle = "#e2b657";
-  ctx.fillRect(item.w / 2 - 8, item.h - 28, 16, 28);
+
+  ctx.fillStyle = theme.accentGold;
+  ctx.fillRect(item.w / 2 - 14, 20, 28, 4);
+
+  // Fluted entrance columns
   ctx.fillStyle = "#fff8ee";
-  ctx.font = "bold 11px Georgia";
+  ctx.fillRect(10, 36, 10, item.h - 36);
+  ctx.fillRect(item.w - 20, 36, 10, item.h - 36);
+
+  // Dark grand archway entrance with warm inviting light
+  const archW = Math.max(34, item.w - 48);
+  const archX = (item.w - archW) / 2;
+  ctx.fillStyle = "rgba(25, 16, 12, 0.88)";
+  round(ctx, archX, item.h - 48, archW, 48, 16);
+  ctx.fill();
+
+  // Warm interior glow
+  const glow = ctx.createRadialGradient(item.w / 2, item.h - 20, 4, item.w / 2, item.h - 20, 26);
+  glow.addColorStop(0, "rgba(255, 230, 140, 0.95)");
+  glow.addColorStop(0.6, "rgba(240, 175, 70, 0.65)");
+  glow.addColorStop(1, "rgba(240, 175, 70, 0)");
+  ctx.fillStyle = glow;
+  ctx.beginPath();
+  ctx.arc(item.w / 2, item.h - 20, 26, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Glowing title plaque
+  ctx.fillStyle = "rgba(35, 22, 16, 0.88)";
+  round(ctx, 12, 42, item.w - 24, 26, 6);
+  ctx.fill();
+  ctx.strokeStyle = theme.accentGold;
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  ctx.fillStyle = "#fff8ee";
+  ctx.font = "bold 12px Georgia";
   ctx.textAlign = "center";
   const words = item.label.split(" ");
-  words.slice(0, 2).forEach((word, index) => ctx.fillText(word, item.w / 2, 58 + index * 13));
+  ctx.fillText(words.slice(0, 2).join(" "), item.w / 2, 59);
+
+  // Floating prompt beacon
+  const bobP = Math.sin(time * 3 + item.id) * 3;
+  ctx.fillStyle = theme.accentGold;
+  round(ctx, item.w / 2 - 32, item.h - 58 + bobP, 64, 18, 9);
+  ctx.fill();
+  ctx.fillStyle = theme.ink;
+  ctx.font = "bold 10px Georgia";
+  ctx.fillText("▶ ENTRAR", item.w / 2, item.h - 45 + bobP);
+
   ctx.restore();
 }
 
@@ -331,45 +857,104 @@ function drawDeco(ctx: CanvasRenderingContext2D, item: Ent, theme: Theme, time: 
   ctx.save();
   ctx.translate(item.x, item.y);
   if (item.ref === "lamp") {
-    ctx.fillStyle = theme.ink;
-    ctx.fillRect(12, 16, 4, 42);
-    ctx.fillStyle = "#f2c14e";
+    // Madrid 3-Globe Fernandina Cast-Iron Streetlamp
+    // Iron post
+    ctx.fillStyle = "#2c2825";
+    ctx.fillRect(13, 20, 5, 42);
+    ctx.fillRect(9, 58, 13, 6);
+
+    // Decorative bracket arms
     ctx.beginPath();
-    ctx.arc(14, 12, 8, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.arc(15, 24, 12, Math.PI, Math.PI * 2);
+    ctx.strokeStyle = "#2c2825";
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    // 3 Golden Lanterns with radiant light cones
+    const lamps = [
+      { x: 3, y: 16 },
+      { x: 15, y: 10 },
+      { x: 27, y: 16 },
+    ];
+    for (const l of lamps) {
+      // Warm light bloom
+      const glow = ctx.createRadialGradient(l.x, l.y, 2, l.x, l.y, 18);
+      glow.addColorStop(0, "rgba(255, 245, 180, 0.9)");
+      glow.addColorStop(0.5, "rgba(255, 210, 100, 0.45)");
+      glow.addColorStop(1, "rgba(255, 190, 80, 0)");
+      ctx.fillStyle = glow;
+      ctx.beginPath();
+      ctx.arc(l.x, l.y, 18, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Glass globe
+      ctx.fillStyle = "#ffffff";
+      ctx.beginPath();
+      ctx.arc(l.x, l.y, 5, 0, Math.PI * 2);
+      ctx.fill();
+    }
   } else if (item.ref === "tree") {
-    ctx.fillStyle = "#6b442c";
-    ctx.fillRect(14, 28, 6, 30);
+    // Madrid Park Chestnut / Plane Tree
+    ctx.fillStyle = "#5c3d28";
+    ctx.fillRect(13, 30, 8, 32);
+
+    // Layered lush leafy foliage
     ctx.fillStyle = theme.hill;
     ctx.beginPath();
-    ctx.arc(17, 20, 16, 0, Math.PI * 2);
+    ctx.arc(17, 18, 22, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = "#4a7838";
+    ctx.beginPath();
+    ctx.arc(14, 14, 18, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#6ca04b";
+    ctx.beginPath();
+    ctx.arc(19, 11, 14, 0, Math.PI * 2);
     ctx.fill();
   } else if (item.ref === "banner") {
-    ctx.fillStyle = theme.ink;
+    // Madrid Festival / Convocatoria Banner
+    ctx.fillStyle = "#3a2a22";
     ctx.fillRect(6, 0, 3, 58);
     ctx.fillStyle = theme.accent;
     ctx.beginPath();
     ctx.moveTo(9, 4);
-    ctx.lineTo(30, 12 + Math.sin(time * 3) * 2);
-    ctx.lineTo(9, 24);
+    ctx.lineTo(34, 14 + Math.sin(time * 3) * 2.5);
+    ctx.lineTo(9, 28);
     ctx.fill();
+    ctx.fillStyle = theme.accentGold;
+    ctx.fillRect(9, 14, 18, 3);
   } else if (item.ref === "fountain") {
-    ctx.fillStyle = "#d9c7a2";
+    // Classical Stone Plaza Fountain
+    ctx.fillStyle = "#dcd2be";
     round(ctx, 8, 36, 74, 28, 12);
     ctx.fill();
-    ctx.fillStyle = "#7eb7d8";
+    ctx.strokeStyle = "#8d7c67";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Water pool
+    ctx.fillStyle = "#6bb0d8";
     ctx.beginPath();
-    ctx.ellipse(45, 46, 24, 8, 0, 0, Math.PI * 2);
+    ctx.ellipse(45, 46, 26, 9, 0, 0, Math.PI * 2);
     ctx.fill();
-    ctx.strokeStyle = "#7eb7d8";
+
+    // Animated water jet
+    ctx.strokeStyle = "rgba(255,255,255,0.75)";
+    ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.arc(45, 20, 8 + Math.sin(time * 4) * 2, 0, Math.PI);
+    ctx.arc(45, 22, 10 + Math.sin(time * 5) * 2.5, 0, Math.PI);
     ctx.stroke();
   } else if (item.ref === "column") {
-    ctx.fillStyle = "#f3e6cf";
+    // Classical Fluted Marble Column
+    ctx.fillStyle = "#f7eee1";
     ctx.fillRect(16, 8, 16, 62);
+    ctx.fillStyle = "#e2d2bd";
     ctx.fillRect(8, 0, 32, 10);
     ctx.fillRect(8, 62, 32, 8);
+    ctx.fillStyle = "#cfbeaa";
+    ctx.fillRect(20, 10, 3, 50);
+    ctx.fillRect(26, 10, 3, 50);
   } else {
     ctx.fillStyle = theme.accent;
     ctx.fillRect(8, 20, 22, 28);
@@ -417,22 +1002,66 @@ function drawChibi(ctx: CanvasRenderingContext2D, id: string, x: number, y: numb
 function drawPlayer(ctx: CanvasRenderingContext2D, run: Run) {
   const body = run.player;
   const jumping = !body.onGround;
-  const walking = Math.abs(body.vx) > 24 && body.onGround;
-  const sprite = getSprite(jumping ? SPRITES.jump : walking ? SPRITES.walk : SPRITES.stand) ?? getSprite(SPRITES.walk);
-  const dh = jumping ? 120 : 114;
+  const walking = Math.abs(body.vx) > 20 && body.onGround;
+
+  // Walk cycle frame selection (4 smooth walking phases from the user's doll)
+  let spritePath = SPRITES.stand;
+  let bob = 0;
+  let tilt = 0;
+
+  if (jumping) {
+    spritePath = SPRITES.jump;
+    tilt = Math.max(-0.15, Math.min(0.15, body.vy * 0.0003 * body.face));
+  } else if (walking) {
+    const stepProgress = Math.abs(body.x * 0.048);
+    const frameIdx = Math.floor(stepProgress) % 4;
+    const walkFrames = [SPRITES.walk0, SPRITES.walk1, SPRITES.walk2, SPRITES.walk3];
+    spritePath = walkFrames[frameIdx] ?? SPRITES.walk;
+
+    // Organic walking stride bob & forward lean
+    bob = Math.sin(stepProgress * Math.PI) * 3.5;
+    tilt = Math.max(-0.12, Math.min(0.12, body.vx * 0.00035 * body.face));
+  } else {
+    // Idle breathing animation
+    spritePath = SPRITES.stand;
+    bob = Math.sin(run.time * 2.8) * 1.6;
+  }
+
+  const sprite = getSprite(spritePath) ?? getSprite(SPRITES.walk);
+  const dh = jumping ? 122 : 116;
+
   ctx.save();
   ctx.translate(body.x + body.w / 2, body.y + body.h);
-  ctx.scale(body.face, body.land > 0 ? 0.9 : 1);
-  ctx.fillStyle = "rgba(40,24,16,.22)";
+
+  // Soft double-layer contact shadow that scales with jump height
+  const shadowScale = jumping ? 0.7 : 1;
+  ctx.fillStyle = "rgba(25, 16, 12, 0.28)";
   ctx.beginPath();
-  ctx.ellipse(0, 2, 18, 5, 0, 0, Math.PI * 2);
+  ctx.ellipse(0, 3, 20 * shadowScale, 5.5 * shadowScale, 0, 0, Math.PI * 2);
   ctx.fill();
+
+  // Subtle footstep dust when running
+  if (walking && Math.abs(bob) > 2.8) {
+    ctx.fillStyle = "rgba(235, 218, 195, 0.45)";
+    ctx.beginPath();
+    ctx.arc(-body.face * 12, 0, 4, 0, Math.PI * 2);
+    ctx.arc(-body.face * 18, -2, 2.5, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Facing, tilt, and landing squash/stretch
+  const squashY = body.land > 0 ? 0.88 : jumping ? 1.05 : 1;
+  const squashX = body.land > 0 ? 1.12 : jumping ? 0.96 : 1;
+  ctx.scale(body.face * squashX, squashY);
+  ctx.rotate(tilt);
+
   if (sprite) {
     const dw = dh * (sprite.width / sprite.height);
+    // Invulnerability flashing
     if (run.iframe > 0 && Math.sin(run.time * 30) > 0) ctx.globalAlpha = 0.45;
-    const bob = walking ? Math.sin(run.time * 14) * 2.5 : 0;
     ctx.drawImage(sprite, -dw / 2, -dh + bob + 4, dw, dh);
   } else {
+    // Fallback chibi if loading
     ctx.fillStyle = "#d4654a";
     ctx.beginPath();
     ctx.arc(0, -78, 16, 0, Math.PI * 2);
@@ -469,43 +1098,62 @@ function drawBit(ctx: CanvasRenderingContext2D, run: Run, theme: Theme) {
 function bubble(ctx: CanvasRenderingContext2D, x: number, y: number, text: string) {
   ctx.save();
   ctx.fillStyle = "#fffaf2";
-  round(ctx, x, y, Math.max(28, text.length * 7), 18, 8);
+  const w = Math.max(34, text.length * 7.5 + 16);
+  round(ctx, x, y, w, 22, 10);
   ctx.fill();
+  ctx.strokeStyle = "rgba(45,28,18,0.2)";
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
   ctx.fillStyle = "#3a2a22";
   ctx.font = "bold 11px Georgia";
   ctx.textAlign = "center";
-  ctx.fillText(text, x + 16, y + 13);
+  ctx.fillText(text, x + w / 2, y + 15);
   ctx.restore();
 }
 
 function drawHud(ctx: CanvasRenderingContext2D, run: Run, width: number) {
+  // Heart life indicators with glowing borders
   for (let i = 0; i < run.maxHearts; i++) {
-    ctx.fillStyle = i < run.hearts ? "#c4523a" : "rgba(255,255,255,.35)";
+    const active = i < run.hearts;
+    ctx.fillStyle = active ? "#d94236" : "rgba(255,255,255,.32)";
     ctx.beginPath();
-    ctx.arc(22 + i * 18, 22, 7, 0, Math.PI * 2);
+    ctx.arc(22 + i * 20, 22, 7.5, 0, Math.PI * 2);
     ctx.fill();
+    ctx.strokeStyle = active ? "#7c221b" : "rgba(0,0,0,0.2)";
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
   }
+
+  // Articles Collected Counter
   ctx.fillStyle = "#fffaf2";
   ctx.font = "bold 13px Georgia";
   ctx.textAlign = "left";
-  ctx.fillText(`§ ${run.articles}${run.articleTotal ? `/${run.articleTotal}` : ""}`, 22, 44);
+  ctx.shadowColor = "rgba(0,0,0,0.6)";
+  ctx.shadowBlur = 4;
+  ctx.fillText(`§ ${run.articles}${run.articleTotal ? `/${run.articleTotal}` : ""}`, 22, 46);
+
+  // Difficulty badge
   ctx.textAlign = "right";
-  ctx.fillText(run.difficulty, width - 16, 24);
+  ctx.fillText(run.difficulty.toUpperCase(), width - 18, 24);
+  ctx.shadowBlur = 0;
 }
 
 function drawBanner(ctx: CanvasRenderingContext2D, run: Run, width: number) {
   ctx.save();
   ctx.globalAlpha = Math.min(1, run.bannerT);
-  ctx.fillStyle = "rgba(36,22,16,.72)";
-  round(ctx, width / 2 - 220, 16, 440, 54, 12);
+  ctx.fillStyle = "rgba(36,22,16,.85)";
+  round(ctx, width / 2 - 230, 16, 460, 56, 14);
   ctx.fill();
+  ctx.strokeStyle = "rgba(226, 182, 87, 0.4)";
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
   ctx.fillStyle = "#f6efe2";
   ctx.textAlign = "center";
   ctx.font = "700 18px Georgia";
-  ctx.fillText(run.title, width / 2, 38);
+  ctx.fillText(run.title, width / 2, 39);
   ctx.font = "13px Georgia";
-  ctx.fillStyle = "#e2b657";
-  ctx.fillText(run.subtitle, width / 2, 56);
+  ctx.fillStyle = "#e5b452";
+  ctx.fillText(run.subtitle, width / 2, 58);
   ctx.restore();
 }
 
@@ -513,25 +1161,31 @@ function drawToast(ctx: CanvasRenderingContext2D, run: Run, width: number, heigh
   ctx.save();
   ctx.globalAlpha = Math.min(1, run.toastT);
   const text = run.toast.length > 110 ? `${run.toast.slice(0, 107)}…` : run.toast;
-  ctx.fillStyle = "rgba(255,248,236,.94)";
-  round(ctx, 16, height - 58, Math.min(width - 32, 640), 42, 10);
+  ctx.fillStyle = "rgba(255,248,236,.96)";
+  round(ctx, 16, height - 60, Math.min(width - 32, 660), 44, 12);
   ctx.fill();
+  ctx.strokeStyle = "rgba(40,24,16,0.15)";
+  ctx.lineWidth = 1;
+  ctx.stroke();
   ctx.fillStyle = "#3a2a22";
   ctx.font = "13px Georgia";
   ctx.textAlign = "left";
-  ctx.fillText(text, 28, height - 32);
+  ctx.fillText(text, 28, height - 33);
   ctx.restore();
 }
 
 function drawPrompt(ctx: CanvasRenderingContext2D, text: string, width: number, height: number) {
   ctx.save();
-  ctx.fillStyle = "rgba(31,138,138,.94)";
-  const w = Math.min(width - 24, text.length * 8 + 28);
-  round(ctx, width / 2 - w / 2, height - 28, w, 22, 11);
+  ctx.fillStyle = "rgba(28, 130, 130, 0.96)";
+  const w = Math.min(width - 24, text.length * 8 + 32);
+  round(ctx, width / 2 - w / 2, height - 30, w, 24, 12);
   ctx.fill();
+  ctx.strokeStyle = "rgba(255,255,255,0.4)";
+  ctx.lineWidth = 1;
+  ctx.stroke();
   ctx.fillStyle = "#fff";
   ctx.font = "bold 12px Georgia";
   ctx.textAlign = "center";
-  ctx.fillText(text, width / 2, height - 13);
+  ctx.fillText(text, width / 2, height - 14);
   ctx.restore();
 }

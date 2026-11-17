@@ -24,7 +24,7 @@ import {
   type Pending,
   type Run,
 } from "./game/engine";
-import { chromaTrim, SPRITES } from "./game/sprites";
+import { chromaTrim, preload, SPRITES } from "./game/sprites";
 
 type Save = { stars: number; best: number; attempts: number; completed: boolean };
 type BoeLaw = { id: string; title: string; fechaHumana?: string | null; fecha?: string | null; url: string | null; changed?: boolean; ok?: boolean; topics?: string[] };
@@ -113,10 +113,15 @@ export default function GameApp() {
   const [noteDraft, setNoteDraft] = useState("");
   const [customQ, setCustomQ] = useState({ prompt: "", options: ["", "", "", ""], correctIndex: 0, explanation: "" });
   const [titlePose, setTitlePose] = useState<"study" | "cheer">("study");
+  const [showControls, setShowControls] = useState(false);
 
   const toggleMute = useCallback(() => {
     const next = audio.toggle();
     setMuted(next);
+  }, []);
+
+  useEffect(() => {
+    void preload(Object.values(SPRITES));
   }, []);
 
   useEffect(() => {
@@ -507,11 +512,58 @@ export default function GameApp() {
               </div>
             </div>
 
-            <div className="row main-actions">
-              <button className="primary grow cta-btn" onClick={() => { audio.unlock(); launch(startHub(difficulty)); }}>
-                <span className="cta-icon">🎮</span> Entrar en la Plaza del INAP
+            <div className="quick-start-box stack">
+              <button
+                className="primary wide cta-btn direct-play-btn"
+                onClick={() => {
+                  audio.unlock();
+                  enter("I-1");
+                }}
+              >
+                <span className="cta-icon">🚀</span>
+                <span className="cta-text-group">
+                  <strong>¡JUGAR AHORA: TEMA 1!</strong>
+                  <small>Constitución de 1978 · Tribunal A2</small>
+                </span>
               </button>
-              <MuteButton muted={muted} onToggle={toggleMute} />
+
+              <div className="quick-select-card">
+                <label htmlFor="quick-select" className="quick-select-label">
+                  ⚡ O salta directo a cualquier tema:
+                </label>
+                <select
+                  id="quick-select"
+                  className="quick-select-dropdown"
+                  defaultValue=""
+                  onChange={(e) => {
+                    const id = e.target.value;
+                    if (id) {
+                      audio.unlock();
+                      enter(id);
+                    }
+                  }}
+                >
+                  <option value="" disabled>Seleccionar tema (1 al 58)...</option>
+                  {TOPICS.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.id}: {t.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="row plaza-row">
+                <button
+                  className="ghost grow plaza-btn"
+                  onClick={() => {
+                    audio.unlock();
+                    launch(startHub(difficulty));
+                  }}
+                >
+                  <span className="cta-icon">🏛️</span> Explorar Plaza del INAP (Modo Libre)
+                </button>
+                <MuteButton muted={muted} onToggle={toggleMute} />
+              </div>
             </div>
 
             <div className="nav-grid">
@@ -544,10 +596,23 @@ export default function GameApp() {
           <header className="topbar">
             <button className="ghost" onClick={() => launch(startHub(difficulty))}>Plaza</button>
             <strong key={tick}>{runRef.current?.title}</strong>
+            <button
+              type="button"
+              className={`ghost controls-toggle-btn ${showControls ? "active" : ""}`}
+              onClick={() => setShowControls((v) => !v)}
+              title="Mostrar u ocultar mandos en pantalla"
+            >
+              🎮 {showControls ? "Ocultar botones" : "Botones táctiles"}
+            </button>
             <button className="ghost" onClick={() => setPaused(true)}>Pausa</button>
             <MuteButton muted={muted} onToggle={toggleMute} />
           </header>
           <div className="playfield">
+            <div className="controls-hint-bar">
+              <span><strong>Mover:</strong> ⬅️ ➡️ o A/D</span>
+              <span><strong>Saltar:</strong> ⬆️ o ESPACIO</span>
+              <span><strong>Hablar / Entrar:</strong> E o ENTER</span>
+            </div>
             <canvas ref={canvasRef} />
             {overlay?.type === "dialogue" && <Dialogue pending={overlay} onQuiz={() => { const current = runRef.current; if (!current) return; if (overlay.topicId) offerNpcQuiz(current); else acceptDialogue(current); showPendingRef.current(current.pending); }} onClose={() => { const current = runRef.current; if (!current) return; acceptDialogue(current); shownRef.current = ""; setOverlay(null); }} />}
             {overlay?.type === "quiz" && (
@@ -622,11 +687,11 @@ export default function GameApp() {
               </div>
             )}
           </div>
-          <div className="pad">
-            <button onPointerDown={(event) => { event.preventDefault(); inputRef.current.left = true; }} onPointerUp={() => { inputRef.current.left = false; }} onPointerLeave={() => { inputRef.current.left = false; }} onPointerCancel={() => { inputRef.current.left = false; }}>◀</button>
-            <button onPointerDown={(event) => { event.preventDefault(); inputRef.current.right = true; }} onPointerUp={() => { inputRef.current.right = false; }} onPointerLeave={() => { inputRef.current.right = false; }} onPointerCancel={() => { inputRef.current.right = false; }}>▶</button>
-            <button onPointerDown={(event) => { event.preventDefault(); inputRef.current.jumpHeld = true; inputRef.current.jumpPressed = true; }} onPointerUp={() => { inputRef.current.jumpHeld = false; }} onPointerCancel={() => { inputRef.current.jumpHeld = false; }}>Saltar</button>
-            <button onPointerDown={(event) => { event.preventDefault(); inputRef.current.actionPressed = true; }}>Acción</button>
+          <div className={`pad ${showControls ? "pad-forced" : ""}`}>
+            <button type="button" onPointerDown={(event) => { event.preventDefault(); inputRef.current.left = true; }} onPointerUp={() => { inputRef.current.left = false; }} onPointerLeave={() => { inputRef.current.left = false; }} onPointerCancel={() => { inputRef.current.left = false; }}>◀ Izq</button>
+            <button type="button" onPointerDown={(event) => { event.preventDefault(); inputRef.current.right = true; }} onPointerUp={() => { inputRef.current.right = false; }} onPointerLeave={() => { inputRef.current.right = false; }} onPointerCancel={() => { inputRef.current.right = false; }}>Der ▶</button>
+            <button type="button" onPointerDown={(event) => { event.preventDefault(); inputRef.current.jumpHeld = true; inputRef.current.jumpPressed = true; }} onPointerUp={() => { inputRef.current.jumpHeld = false; }} onPointerCancel={() => { inputRef.current.jumpHeld = false; }}>⬆ Saltar</button>
+            <button type="button" onPointerDown={(event) => { event.preventDefault(); inputRef.current.actionPressed = true; }}>💬 Hablar (E)</button>
           </div>
         </div>
       )}

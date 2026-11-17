@@ -341,7 +341,7 @@ button:focus-visible, a:focus-visible { outline: 3px solid var(--gold); outline-
   padding: 8px;
   background: #1b2430;
 }
-.game-root.touch .pad, .game-root.short .pad { display: grid; }
+.game-root.touch .pad, .game-root.short .pad, .pad.pad-forced { display: grid; }
 .pad button {
   min-height: 52px;
   background: rgba(246, 239, 226, 0.14);
@@ -425,3 +425,124 @@ button:focus-visible, a:focus-visible { outline: 3px solid var(--gold); outline-
   font-family: var(--font-display);
   font-size: 2rem;
 }
+
+/* Quick Start & Direct Play CTA */
+.quick-start-box {
+  background: #fbf6ee;
+  border: 1px solid rgba(196, 82, 58, 0.22);
+  border-radius: 18px;
+  padding: 12px;
+  gap: 8px;
+  box-shadow: 0 4px 14px rgba(45, 25, 15, 0.05);
+}
+
+.direct-play-btn {
+  background: linear-gradient(135deg, #c4523a, #aa3322);
+  font-size: 1.15rem;
+  padding: 14px 20px;
+  border-radius: 16px;
+  box-shadow: 0 6px 16px rgba(196, 82, 58, 0.38);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.direct-play-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 22px rgba(196, 82, 58, 0.5);
+}
+
+.direct-play-btn:active {
+  transform: translateY(1px);
+}
+
+.cta-text-group {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  line-height: 1.25;
+}
+
+.cta-text-group strong {
+  font-size: 1.1rem;
+  letter-spacing: 0.02em;
+}
+
+.cta-text-group small {
+  font-size: 0.76rem;
+  font-weight: 500;
+  opacity: 0.92;
+}
+
+.quick-select-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.quick-select-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #6b5545;
+}
+
+.quick-select-dropdown {
+  background: #ffffff;
+  border: 1.5px solid var(--gold);
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.plaza-row {
+  margin-top: 2px;
+}
+
+.plaza-btn {
+  font-size: 0.88rem;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+}
+
+/* In-game controls helper & on-screen pad */
+.controls-toggle-btn.active {
+  background: var(--gold);
+  color: var(--ink);
+  font-weight: 800;
+}
+
+.controls-hint-bar {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 14px;
+  padding: 5px 14px;
+  background: rgba(22, 14, 10, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  color: #fff9ee;
+  font-size: 0.75rem;
+  pointer-events: none;
+  z-index: 3;
+  backdrop-filter: blur(4px);
+  white-space: nowrap;
+}
+
+.controls-hint-bar span strong {
+  color: var(--gold);
+}
+
+@media (max-width: 640px) {
+  .controls-hint-bar {
+    display: none;
+  }
+}
+
