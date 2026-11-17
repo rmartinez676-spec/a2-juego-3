@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { NPC_BY_ID, TOPIC_BY_ID, TOPICS, WORLDS } from "@/lib/content";
+import { getNextLevel, NPC_BY_ID, TOPIC_BY_ID, TOPICS, WORLDS } from "@/lib/content";
 import { selectQuestions } from "@/lib/questions";
 import type { Difficulty, Question } from "@/lib/types";
 import { DIFFICULTIES, EXAM_META } from "@/lib/types";
@@ -823,40 +823,98 @@ export default function GameApp() {
               <div className="overlay">
                 <section className="result-card stack">
                   {result ? <ChromaImg src={SPRITES.cheer} alt="Alba celebrando" /> : null}
-                  <h2>{result ? "Submundo superado" : failed ? "Se acabaron los corazones" : "Pausa"}</h2>
-                  {result && <p>{result.stars} estrellas · {result.score} puntos · {result.note}</p>}
-                  {failed && <p>Las preguntas del siguiente intento serán otras. El mapa no se cierra.</p>}
+                  <h2>{result ? (result.stars >= 1 ? "🎉 ¡Submundo superado!" : "⚠️ Submundo completado sin estrella") : failed ? "Se acabaron los corazones" : "Pausa"}</h2>
+                  {result && (
+                    <div className="result-score-summary">
+                      <div className="stars-banner">
+                        {"⭐".repeat(result.stars)}{"☆".repeat(Math.max(0, 3 - result.stars))}
+                      </div>
+                      <p><strong>{result.stars} estrellas</strong> · {result.score} puntos · {result.note}</p>
+                      <p className="fine">Respuestas: {result.correct} correctas, {result.wrong} fallos, {result.blank} en blanco · Artículos: {result.articles}</p>
+                      {result.stars === 0 && (
+                        <p className="warn-notice">Para desbloquear el siguiente tema es necesario conseguir al menos 1 estrella. ¡Habla con el guía y supera su test!</p>
+                      )}
+                    </div>
+                  )}
+                  {failed && <p>Se han agotado los corazones. Puedes reintentar este submundo; las preguntas serán distintas.</p>}
                   {paused && !result && !failed && <Help />}
-                  <div className="row">
-                    {result && (
-                      <button className="primary" onClick={() => {
-                        setPaused(false);
-                        if (runRef.current?.worldId && runRef.current.worldId !== "hub" && runRef.current.mode !== "hub") {
-                          launch(startMap(runRef.current.worldId, difficulty));
-                        } else {
-                          launch(startHub(difficulty));
-                        }
-                      }}>
-                        Seguir ▶
-                      </button>
-                    )}
-                    {!result && !failed && <button className="primary" onClick={() => setPaused(false)}>Seguir</button>}
-                    {(failed || result) && runRef.current && (
-                      <button className="ghost" onClick={() => enter(runRef.current?.levelId || "hub")}>
-                        Reintentar
-                      </button>
-                    )}
-                    <button className="ghost" onClick={() => {
-                      setPaused(false);
-                      if (runRef.current?.worldId && runRef.current.worldId !== "hub" && runRef.current.mode !== "hub") {
-                        launch(startMap(runRef.current.worldId, difficulty));
-                      } else {
-                        launch(startHub(difficulty));
-                      }
-                    }}>
-                      Volver al mapa
-                    </button>
-                  </div>
+                  
+                  {(() => {
+                    const currentLevel = runRef.current?.levelId ?? "";
+                    const nextLevel = currentLevel ? getNextLevel(currentLevel) : null;
+                    const worldName = WORLDS.find((w) => w.id === runRef.current?.worldId)?.name ?? "Bloque";
+
+                    return (
+                      <div className="result-action-col">
+                        {/* 1. Botón principal: pasar al siguiente minimundo si consiguió el mínimo (1 estrella) */}
+                        {result && result.stars >= 1 && nextLevel && (
+                          <button
+                            className="primary next-stage-btn"
+                            onClick={() => {
+                              setPaused(false);
+                              setResult(null);
+                              enter(nextLevel.nextId);
+                            }}
+                          >
+                            <span className="btn-icon">⏩</span>
+                            <div className="btn-label-box">
+                              <strong>Siguiente: {nextLevel.nextLabel}</strong>
+                              <small>{nextLevel.isBoss ? "¡Batalla contra el Jefe del Bloque!" : nextLevel.isNextBlock ? "¡Avanzar al siguiente Bloque!" : "Continuar temario"}</small>
+                            </div>
+                          </button>
+                        )}
+
+                        <div className="result-secondary-row">
+                          {/* 2. Reintentar este mismo submundo */}
+                          {(failed || result) && currentLevel && (
+                            <button
+                              className="ghost action-btn"
+                              onClick={() => {
+                                setPaused(false);
+                                setResult(null);
+                                enter(currentLevel);
+                              }}
+                            >
+                              🔄 Reintentar tema
+                            </button>
+                          )}
+
+                          {/* 3. Volver al mapa de este mundo/bloque */}
+                          {runRef.current?.worldId && runRef.current.worldId !== "hub" && (
+                            <button
+                              className="ghost action-btn"
+                              onClick={() => {
+                                setPaused(false);
+                                setResult(null);
+                                launch(startMap(runRef.current!.worldId, difficulty));
+                              }}
+                            >
+                              🗺️ Mapa {worldName}
+                            </button>
+                          )}
+
+                          {/* 4. Volver a la Plaza General */}
+                          <button
+                            className="ghost action-btn"
+                            onClick={() => {
+                              setPaused(false);
+                              setResult(null);
+                              launch(startHub(difficulty));
+                            }}
+                          >
+                            🏛️ Plaza General
+                          </button>
+
+                          {/* Si está en pausa normal */}
+                          {!result && !failed && (
+                            <button className="primary" onClick={() => setPaused(false)}>
+                              Continuar jugando
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </section>
               </div>
             )}

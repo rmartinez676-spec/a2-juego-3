@@ -467,6 +467,87 @@ button:focus-visible, a:focus-visible { outline: 3px solid var(--gold); outline-
 .choice.bad { background: #fde8e4; border-color: var(--terra); }
 .explain { background: #f6efe2; border-radius: 14px; padding: 10px 12px; }
 
+.result-score-summary {
+  background: rgba(246, 239, 226, 0.75);
+  border: 1px solid rgba(226, 182, 87, 0.4);
+  border-radius: 16px;
+  padding: 14px 18px;
+  margin: 8px 0;
+  text-align: center;
+}
+.stars-banner {
+  font-size: 2.2rem;
+  letter-spacing: 6px;
+  color: #f4c653;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  margin-bottom: 4px;
+}
+.warn-notice {
+  color: #c43328;
+  font-weight: 700;
+  font-size: 0.88rem;
+  margin-top: 8px;
+}
+.result-action-col {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  margin-top: 10px;
+}
+.next-stage-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 14px 20px;
+  background: linear-gradient(135deg, #1c8282 0%, #105959 100%);
+  border: 2px solid #f4c653;
+  box-shadow: 0 4px 16px rgba(28, 130, 130, 0.4), 0 0 14px rgba(244, 198, 83, 0.35);
+  border-radius: 16px;
+  font-size: 1.05rem;
+  color: #ffffff;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.next-stage-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(28, 130, 130, 0.5), 0 0 20px rgba(244, 198, 83, 0.6);
+}
+.next-stage-btn:active {
+  transform: scale(0.97);
+}
+.next-stage-btn .btn-icon {
+  font-size: 1.6rem;
+}
+.next-stage-btn .btn-label-box {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+}
+.next-stage-btn small {
+  font-size: 0.78rem;
+  opacity: 0.88;
+  font-weight: normal;
+}
+.result-secondary-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  width: 100%;
+}
+.result-secondary-row .action-btn {
+  flex: 1 1 calc(33% - 10px);
+  min-width: 140px;
+  padding: 10px 14px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  border-radius: 12px;
+  text-align: center;
+}
+
 .panel { padding: 14px; color: var(--paper); }
 .panel-head, .exam-head { display: flex; gap: 8px; align-items: center; justify-content: space-between; }
 .panel h1, .exam-screen h1 { color: white; font-size: clamp(1.7rem, 4vw, 3rem); }

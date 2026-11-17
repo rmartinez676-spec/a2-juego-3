@@ -987,133 +987,460 @@ function drawEntity(ctx: CanvasRenderingContext2D, run: Run, item: Ent, theme: T
 }
 
 function drawBuilding(ctx: CanvasRenderingContext2D, item: Ent, theme: Theme, time: number) {
-  // Super Mario World style Royal Palace Castle & Ministerial Fortresses
   ctx.save();
   ctx.translate(item.x, item.y);
 
   const w = item.w;
   const h = item.h;
-  const isFinal = item.ref === "exam-hall" || item.ref.includes("final") || item.ref.includes("boss");
+  const ref = item.ref;
+  const isFinal = ref === "exam-hall" || ref.includes("final");
+  const isBoss = ref.includes("boss");
 
-  // 1. CASTLE TOWERS (Twin Bastion Towers flanking left and right)
+  // Determine architectural theme by block/subject
+  let arch: "carta" | "europa" | "jardin" | "sello" | "campus" | "hacienda" | "exam" | "boss" | "plaza" = "plaza";
+  if (isBoss) arch = "boss";
+  else if (isFinal) arch = "exam";
+  else if (ref === "map-w1" || ref.startsWith("I-")) arch = "carta";
+  else if (ref === "map-w2" || ref.startsWith("II-")) arch = "europa";
+  else if (ref === "map-w3" || ref.startsWith("III-")) arch = "jardin";
+  else if (ref === "map-w4" || ref.startsWith("IV-")) arch = "sello";
+  else if (ref === "map-w5" || ref.startsWith("V-")) arch = "campus";
+  else if (ref === "map-w6" || ref.startsWith("VI-")) arch = "hacienda";
+
+  // Palette & style definitions per block
+  let wallColor = theme.top;
+  let shadowColor = theme.groundShadow;
+  let trimColor = theme.topHighlight;
+  let accentColor = theme.accent;
+  let goldColor = theme.accentGold;
+  let gateColor = "#120e18";
+
+  if (arch === "carta") {
+    wallColor = "#fbf8f0";
+    shadowColor = "#baa68b";
+    trimColor = "#eddab8";
+    accentColor = "#c43328";
+    goldColor = "#e5b452";
+  } else if (arch === "europa") {
+    wallColor = "#123a6d";
+    shadowColor = "#0c2547";
+    trimColor = "#568fc9";
+    accentColor = "#ffd54f";
+    goldColor = "#ffd54f";
+  } else if (arch === "jardin") {
+    wallColor = "#ded4bd";
+    shadowColor = "#1d5835";
+    trimColor = "#2d784c";
+    accentColor = "#803882";
+    goldColor = "#f4a742";
+  } else if (arch === "sello") {
+    wallColor = "#3c3548";
+    shadowColor = "#231e2b";
+    trimColor = "#655778";
+    accentColor = "#9c2838";
+    goldColor = "#e2b85a";
+  } else if (arch === "campus") {
+    wallColor = "#8e3124";
+    shadowColor = "#5b1c14";
+    trimColor = "#eee8db";
+    accentColor = "#d4883b";
+    goldColor = "#f4ba47";
+  } else if (arch === "hacienda") {
+    wallColor = "#164433";
+    shadowColor = "#0d2b20";
+    trimColor = "#cca44b";
+    accentColor = "#e5b452";
+    goldColor = "#f7d568";
+  } else if (arch === "exam") {
+    wallColor = "#4a1226";
+    shadowColor = "#2b0714";
+    trimColor = "#ffffff";
+    accentColor = "#ffd54f";
+    goldColor = "#ffd54f";
+  } else if (arch === "boss") {
+    wallColor = "#201824";
+    shadowColor = "#0f0b12";
+    trimColor = "#8a2232";
+    accentColor = "#d63044";
+    goldColor = "#e5a828";
+  }
+
+  // 1. CASTLE TOWERS (Twin Bastions flanking left and right)
   const towerW = 28;
   const towerH = h + 18;
   const towerY = -18;
 
-  // Left Tower Stone Body
-  ctx.fillStyle = theme.top;
+  // Left Tower
+  ctx.fillStyle = wallColor;
   round(ctx, 0, towerY + 12, towerW, towerH - 12, 4);
   ctx.fill();
-  ctx.strokeStyle = theme.groundShadow;
+  ctx.strokeStyle = shadowColor;
   ctx.lineWidth = 2;
   ctx.stroke();
 
-  // Right Tower Stone Body
+  // Right Tower
   round(ctx, w - towerW, towerY + 12, towerW, towerH - 12, 4);
   ctx.fill();
   ctx.stroke();
 
-  // Tower Crenellations / Battlements (Almenas de Castillo de Mario)
-  ctx.fillStyle = theme.accent;
-  // Left Tower Almenas
-  ctx.fillRect(0, towerY, 8, 12);
-  ctx.fillRect(10, towerY + 4, 8, 8);
-  ctx.fillRect(20, towerY, 8, 12);
-  // Right Tower Almenas
-  ctx.fillRect(w - towerW, towerY, 8, 12);
-  ctx.fillRect(w - towerW + 10, towerY + 4, 8, 8);
-  ctx.fillRect(w - 8, towerY, 8, 12);
+  // Block 5 (Campus): Brick texture lines
+  if (arch === "campus") {
+    ctx.strokeStyle = "rgba(255,255,255,0.2)";
+    ctx.lineWidth = 1;
+    for (let by = towerY + 18; by < towerY + towerH - 6; by += 8) {
+      ctx.beginPath();
+      ctx.moveTo(2, by); ctx.lineTo(towerW - 2, by);
+      ctx.moveTo(w - towerW + 2, by); ctx.lineTo(w - 2, by);
+      ctx.stroke();
+    }
+  }
 
-  // Waving Heraldic Pennants atop Golden Flagpoles on both towers
+  // Tower Battlements / Crenellations
+  ctx.fillStyle = trimColor;
+  if (arch === "boss") {
+    // Spiked gothic battlements
+    for (let i = 0; i < 3; i++) {
+      ctx.beginPath();
+      ctx.moveTo(i * 9, towerY + 10);
+      ctx.lineTo(i * 9 + 4.5, towerY - 4);
+      ctx.lineTo(i * 9 + 9, towerY + 10);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(w - towerW + i * 9, towerY + 10);
+      ctx.lineTo(w - towerW + i * 9 + 4.5, towerY - 4);
+      ctx.lineTo(w - towerW + i * 9 + 9, towerY + 10);
+      ctx.fill();
+    }
+  } else {
+    // Left tower crenellations
+    ctx.fillRect(0, towerY, 8, 12);
+    ctx.fillRect(10, towerY + 4, 8, 8);
+    ctx.fillRect(20, towerY, 8, 12);
+    // Right tower crenellations
+    ctx.fillRect(w - towerW, towerY, 8, 12);
+    ctx.fillRect(w - towerW + 10, towerY + 4, 8, 8);
+    ctx.fillRect(w - 8, towerY, 8, 12);
+  }
+
+  // Flagpoles atop towers
   const waveFlag = Math.sin(time * 5) * 3;
-  // Left Flagpole & Pennant
-  ctx.fillStyle = "#e5b452";
+  ctx.fillStyle = goldColor;
   ctx.fillRect(13, towerY - 24, 2.5, 24);
-  ctx.beginPath();
-  ctx.arc(14.25, towerY - 24, 3, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.fillStyle = isFinal ? "#c43328" : theme.accent;
-  ctx.beginPath();
-  ctx.moveTo(15.5, towerY - 24);
-  ctx.lineTo(34, towerY - 18 + waveFlag);
-  ctx.lineTo(15.5, towerY - 12);
-  ctx.fill();
-
-  // Right Flagpole & Pennant
-  ctx.fillStyle = "#e5b452";
   ctx.fillRect(w - 15.5, towerY - 24, 2.5, 24);
   ctx.beginPath();
+  ctx.arc(14.25, towerY - 24, 3, 0, Math.PI * 2);
   ctx.arc(w - 14.25, towerY - 24, 3, 0, Math.PI * 2);
   ctx.fill();
 
-  ctx.fillStyle = isFinal ? "#c43328" : theme.accent;
-  ctx.beginPath();
-  ctx.moveTo(w - 13, towerY - 24);
-  ctx.lineTo(w + 6, towerY - 18 + waveFlag);
-  ctx.lineTo(w - 13, towerY - 12);
-  ctx.fill();
+  // THEMATIC FLAGS
+  const drawPennant = (fx: number, dir: 1 | -1) => {
+    ctx.save();
+    ctx.translate(fx, towerY - 24);
+    if (arch === "carta") {
+      // Spanish National Flag (Red - Gold - Red)
+      ctx.fillStyle = "#c43328";
+      ctx.fillRect(0, 0, 20 * dir, 14);
+      ctx.fillStyle = "#f4c653";
+      ctx.fillRect(0, 3.5, 20 * dir, 7);
+      ctx.fillStyle = "#c43328";
+      ctx.fillRect(0, 0, 20 * dir, 3.5);
+      ctx.fillRect(0, 10.5, 20 * dir, 3.5);
+    } else if (arch === "europa") {
+      // European Blue Flag with 12 Gold Stars
+      ctx.fillStyle = "#124ca0";
+      ctx.fillRect(0, 0, 20 * dir, 13);
+      ctx.fillStyle = "#ffd54f";
+      for (let s = 0; s < 6; s++) {
+        const sa = (s / 6) * Math.PI * 2;
+        ctx.fillRect(10 * dir + Math.cos(sa) * 4 - 1, 6.5 + Math.sin(sa) * 4 - 1, 2, 2);
+      }
+    } else if (arch === "jardin") {
+      // Emerald Green & Violet Ribbon
+      ctx.fillStyle = "#2d8856";
+      ctx.fillRect(0, 0, 20 * dir, 8);
+      ctx.fillStyle = "#803882";
+      ctx.fillRect(0, 8, 20 * dir, 6);
+    } else if (arch === "sello") {
+      // Royal Burgundy Archive Velvet
+      ctx.fillStyle = "#8a2434";
+      ctx.fillRect(0, 0, 20 * dir, 14);
+      ctx.fillStyle = "#ffd54f";
+      ctx.fillRect(4 * dir, 4, 3, 6);
+    } else if (arch === "campus") {
+      // Madrid Institutional Crimson
+      ctx.fillStyle = "#9a2824";
+      ctx.fillRect(0, 0, 20 * dir, 14);
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(3 * dir, 3, 2, 2);
+      ctx.fillRect(7 * dir, 3, 2, 2);
+    } else if (arch === "hacienda") {
+      // Golden Treasury Banner
+      ctx.fillStyle = "#e5b452";
+      ctx.fillRect(0, 0, 20 * dir, 14);
+      ctx.fillStyle = "#184534";
+      ctx.fillRect(2 * dir, 2, 16 * dir, 10);
+      ctx.fillStyle = "#f4c653";
+      ctx.beginPath();
+      ctx.arc(10 * dir, 7, 3, 0, Math.PI * 2);
+      ctx.fill();
+    } else {
+      ctx.fillStyle = accentColor;
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(20 * dir, 6 + waveFlag);
+      ctx.lineTo(0, 12);
+      ctx.fill();
+    }
+    ctx.restore();
+  };
+
+  drawPennant(15.5, 1);
+  drawPennant(w - 13, -1);
 
   // 2. CENTRAL PALACE / CASTLE KEEP (Gran Cuerpo Central)
   const mainX = towerW - 4;
   const mainW = w - (towerW - 4) * 2;
   const mainH = h;
-  ctx.fillStyle = theme.top;
+  ctx.fillStyle = wallColor;
   round(ctx, mainX, 16, mainW, mainH - 16, 4);
   ctx.fill();
-  ctx.strokeStyle = theme.groundShadow;
+  ctx.strokeStyle = shadowColor;
   ctx.lineWidth = 2;
   ctx.stroke();
 
-  // Central Castle Crenellations / Balustrade
-  ctx.fillStyle = theme.accent;
+  // Central Roofline & Balustrade
+  ctx.fillStyle = trimColor;
   ctx.fillRect(mainX - 2, 8, mainW + 4, 8);
   for (let ax = mainX + 4; ax < mainX + mainW - 8; ax += 12) {
     ctx.fillRect(ax, 2, 7, 8);
   }
 
-  // Golden Royal Crown or Palace Pediment Crest
-  ctx.fillStyle = "#e5b452";
-  ctx.beginPath();
-  ctx.arc(w / 2, 4, 9, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.strokeStyle = "#8d542c";
-  ctx.lineWidth = 1.5;
-  ctx.stroke();
-  ctx.fillStyle = "#1e140d";
-  ctx.font = "bold 9px Georgia";
-  ctx.textAlign = "center";
-  ctx.fillText(isFinal ? "👑" : "🏰", w / 2, 7.5);
+  // 3. THEMATIC ROOF CREST & ORNAMENTS
+  if (arch === "carta") {
+    // Classical Triangular Greek Pediment with Spanish Crown & 1978
+    ctx.fillStyle = trimColor;
+    ctx.beginPath();
+    ctx.moveTo(mainX - 4, 8);
+    ctx.lineTo(w / 2, -14);
+    ctx.lineTo(w - mainX + 4, 8);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = goldColor;
+    ctx.lineWidth = 2;
+    ctx.stroke();
 
-  // 3. GRAND ARCADED GATEWAY (El Gran Portón Arqueado)
+    ctx.fillStyle = goldColor;
+    ctx.beginPath();
+    ctx.arc(w / 2, -2, 7, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#1e140d";
+    ctx.font = "bold 8px Georgia";
+    ctx.textAlign = "center";
+    ctx.fillText("1978", w / 2, 1);
+  } else if (arch === "europa") {
+    // Modern Berlaymont Atrium + Rotating 12 Gold Stars
+    ctx.fillStyle = "#10356c";
+    ctx.fillRect(w / 2 - 18, -10, 36, 18);
+    ctx.fillStyle = "#79b7ea";
+    ctx.fillRect(w / 2 - 14, -8, 28, 14);
+
+    // 12 Golden Stars orbiting atop the roof
+    const starRadius = 14;
+    ctx.fillStyle = "#ffd54f";
+    for (let s = 0; s < 12; s++) {
+      const sa = (s / 12) * Math.PI * 2 + time * 1.5;
+      const sx = w / 2 + Math.cos(sa) * starRadius;
+      const sy = -16 + Math.sin(sa) * 5;
+      ctx.fillRect(sx - 1.5, sy - 1.5, 3, 3);
+    }
+  } else if (arch === "jardin") {
+    // Stepped Living Green Rooftop Garden + Golden Sun
+    ctx.fillStyle = "#2d784c";
+    round(ctx, mainX + 4, -4, mainW - 8, 12, 6);
+    ctx.fill();
+    // Colorful blooming flowers
+    const flowers = ["#f2545b", "#f9c80e", "#ea7af4", "#43bccd"];
+    flowers.forEach((fc, i) => {
+      ctx.fillStyle = fc;
+      ctx.beginPath();
+      ctx.arc(mainX + 12 + i * 11, -2, 3, 0, Math.PI * 2);
+      ctx.fill();
+    });
+    // Radiant Sun
+    ctx.fillStyle = "#f4a742";
+    ctx.beginPath();
+    ctx.arc(w / 2, -14, 8, 0, Math.PI * 2);
+    ctx.fill();
+  } else if (arch === "sello") {
+    // Enormous Crimson Wax Seal + Crossed Quills
+    ctx.fillStyle = "#9e2536";
+    ctx.beginPath();
+    ctx.arc(w / 2, 0, 12, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = goldColor;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Wax seal ribbon tails
+    ctx.fillStyle = goldColor;
+    ctx.beginPath();
+    ctx.moveTo(w / 2 - 6, 8);
+    ctx.lineTo(w / 2 - 10, 20);
+    ctx.lineTo(w / 2 - 4, 18);
+    ctx.lineTo(w / 2, 10);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(w / 2 + 6, 8);
+    ctx.lineTo(w / 2 + 10, 20);
+    ctx.lineTo(w / 2 + 4, 18);
+    ctx.lineTo(w / 2, 10);
+    ctx.fill();
+
+    ctx.fillStyle = "#fffcf4";
+    ctx.font = "bold 9px serif";
+    ctx.textAlign = "center";
+    ctx.fillText("⚖️", w / 2, 3.5);
+  } else if (arch === "campus") {
+    // Historic Central Clock Tower (Torre del Reloj de la Jornada)
+    ctx.fillStyle = wallColor;
+    ctx.fillRect(w / 2 - 14, -20, 28, 28);
+    ctx.strokeStyle = shadowColor;
+    ctx.strokeRect(w / 2 - 14, -20, 28, 28);
+
+    // Copper mansard roof
+    ctx.fillStyle = "#4e7a68";
+    ctx.beginPath();
+    ctx.moveTo(w / 2 - 16, -20);
+    ctx.lineTo(w / 2, -32);
+    ctx.lineTo(w / 2 + 16, -20);
+    ctx.fill();
+
+    // Clock Face (10:10)
+    ctx.fillStyle = "#ffffff";
+    ctx.beginPath();
+    ctx.arc(w / 2, -6, 8, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = "#3a2218";
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+    // Hands
+    ctx.fillStyle = "#1e140d";
+    ctx.fillRect(w / 2 - 1, -11, 2, 6);
+    ctx.fillRect(w / 2, -7, 4, 2);
+  } else if (arch === "hacienda") {
+    // Golden Scales of Justice and Abacus Crest
+    ctx.fillStyle = trimColor;
+    ctx.fillRect(w / 2 - 18, -12, 36, 20);
+    ctx.strokeStyle = goldColor;
+    ctx.strokeRect(w / 2 - 18, -12, 36, 20);
+
+    ctx.fillStyle = goldColor;
+    ctx.font = "bold 11px serif";
+    ctx.textAlign = "center";
+    ctx.fillText("⚖️", w / 2, 2);
+  } else if (arch === "exam") {
+    // Imperial Roman Triumphal Arch & Roman Eagle
+    ctx.fillStyle = goldColor;
+    ctx.beginPath();
+    ctx.arc(w / 2, 0, 14, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#4a1226";
+    ctx.font = "bold 13px Georgia";
+    ctx.textAlign = "center";
+    ctx.fillText("👑", w / 2, 4);
+  } else if (arch === "boss") {
+    // Boss Skull & Spikes
+    ctx.fillStyle = "#a62838";
+    ctx.beginPath();
+    ctx.arc(w / 2, 0, 11, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 11px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("⚔️", w / 2, 4);
+  } else {
+    // Default Palace Crest
+    ctx.fillStyle = goldColor;
+    ctx.beginPath();
+    ctx.arc(w / 2, 4, 9, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = shadowColor;
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.fillStyle = "#1e140d";
+    ctx.font = "bold 9px Georgia";
+    ctx.textAlign = "center";
+    ctx.fillText("🏰", w / 2, 7.5);
+  }
+
+  // 4. GRAND ARCADED GATEWAY (El Gran Portón Temático)
   const gateW = 44;
   const gateH = 58;
   const gateX = (w - gateW) / 2;
   const gateY = h - gateH;
 
-  // Outer Stone Arch Moulding (Dovelas de piedra labrada)
-  ctx.fillStyle = theme.ground;
+  // Outer Stone Arch Moulding
+  ctx.fillStyle = trimColor;
   round(ctx, gateX - 4, gateY - 4, gateW + 8, gateH + 4, 20);
   ctx.fill();
 
+  // Fluting / Columns if classical (carta, hacienda)
+  if (arch === "carta" || arch === "hacienda") {
+    ctx.fillStyle = trimColor;
+    // Left column
+    ctx.fillRect(gateX - 8, gateY, 5, gateH);
+    // Right column
+    ctx.fillRect(gateX + gateW + 3, gateY, 5, gateH);
+    ctx.fillStyle = goldColor;
+    ctx.fillRect(gateX - 9, gateY - 2, 7, 4);
+    ctx.fillRect(gateX + gateW + 2, gateY - 2, 7, 4);
+  }
+
   // Inner Dark Gateway Abyss
-  ctx.fillStyle = "#120e18";
+  ctx.fillStyle = gateColor;
   round(ctx, gateX, gateY, gateW, gateH, 18);
   ctx.fill();
 
-  // Portcullis Iron Grate (Rastrillo de hierro levantado de Mario)
-  ctx.strokeStyle = "rgba(220, 195, 150, 0.45)";
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  for (let px = gateX + 8; px < gateX + gateW - 4; px += 8) {
-    ctx.moveTo(px, gateY);
-    ctx.lineTo(px, gateY + 22);
+  if (arch === "hacienda") {
+    // Banking Vault Round Wheel Door
+    ctx.fillStyle = "#cca44b";
+    ctx.beginPath();
+    ctx.arc(w / 2, gateY + 28, 16, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = "#8f7030";
+    ctx.lineWidth = 3;
+    ctx.stroke();
+    // Vault spoke wheel
+    ctx.strokeStyle = "#4a3512";
+    ctx.lineWidth = 2;
+    for (let sp = 0; sp < 4; sp++) {
+      const spa = (sp / 4) * Math.PI;
+      ctx.beginPath();
+      ctx.moveTo(w / 2 - Math.cos(spa) * 12, gateY + 28 - Math.sin(spa) * 12);
+      ctx.lineTo(w / 2 + Math.cos(spa) * 12, gateY + 28 + Math.sin(spa) * 12);
+      ctx.stroke();
+    }
+  } else if (arch === "europa") {
+    // Azure high-tech glass portal with cyan illumination
+    ctx.strokeStyle = "#5ce1e6";
+    ctx.lineWidth = 2;
+    round(ctx, gateX + 2, gateY + 2, gateW - 4, gateH - 4, 16);
+    ctx.stroke();
+  } else {
+    // Classic Portcullis Grate
+    ctx.strokeStyle = "rgba(220, 195, 150, 0.45)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    for (let px = gateX + 8; px < gateX + gateW - 4; px += 8) {
+      ctx.moveTo(px, gateY);
+      ctx.lineTo(px, gateY + 22);
+    }
+    ctx.moveTo(gateX + 4, gateY + 12);
+    ctx.lineTo(gateX + gateW - 4, gateY + 12);
+    ctx.moveTo(gateX + 4, gateY + 20);
+    ctx.lineTo(gateX + gateW - 4, gateY + 20);
+    ctx.stroke();
   }
-  ctx.moveTo(gateX + 4, gateY + 12);
-  ctx.lineTo(gateX + gateW - 4, gateY + 12);
-  ctx.moveTo(gateX + 4, gateY + 20);
-  ctx.lineTo(gateX + gateW - 4, gateY + 20);
-  ctx.stroke();
 
   // Warm golden inviting light spilling from the doorway
   const glow = ctx.createRadialGradient(w / 2, h - 16, 4, w / 2, h - 16, 32);
@@ -1125,8 +1452,8 @@ function drawBuilding(ctx: CanvasRenderingContext2D, item: Ent, theme: Theme, ti
   ctx.arc(w / 2, h - 16, 32, 0, Math.PI * 2);
   ctx.fill();
 
-  // Royal Ceremonial Red Carpet rolling out through the gate
-  ctx.fillStyle = "#b22e23";
+  // Ceremonial Red Carpet rolling out through the gate
+  ctx.fillStyle = arch === "exam" ? "#7c1828" : "#b22e23";
   ctx.beginPath();
   ctx.moveTo(gateX + 8, h - 14);
   ctx.lineTo(gateX + gateW - 8, h - 14);
@@ -1134,24 +1461,20 @@ function drawBuilding(ctx: CanvasRenderingContext2D, item: Ent, theme: Theme, ti
   ctx.lineTo(gateX + 4, h);
   ctx.closePath();
   ctx.fill();
-  // Gold carpet trim
-  ctx.fillStyle = "#e5b452";
+  ctx.fillStyle = goldColor;
   ctx.fillRect(gateX + 4, h - 1, gateW - 8, 2);
 
-  // 4. ANIMATED CASTLE WALL TORCHES / BRAZIERS
+  // Animated Torches / Lanterns
   const torches = [gateX - 8, gateX + gateW + 8];
   for (const tx of torches) {
-    // Sconce iron bracket
     ctx.fillStyle = "#2c221e";
     ctx.fillRect(tx - 2, h - 42, 4, 14);
-    // Torch cup
-    ctx.fillStyle = "#8d542c";
+    ctx.fillStyle = goldColor;
     ctx.fillRect(tx - 4, h - 46, 8, 5);
-    // Animated dancing fire flame
     const flicker = Math.sin(time * 12 + tx) * 1.5;
     const flame = ctx.createRadialGradient(tx, h - 49 + flicker, 1, tx, h - 49 + flicker, 10);
     flame.addColorStop(0, "rgba(255, 255, 200, 0.95)");
-    flame.addColorStop(0.4, "rgba(255, 160, 40, 0.75)");
+    flame.addColorStop(0.4, arch === "boss" ? "rgba(255, 60, 60, 0.85)" : "rgba(255, 160, 40, 0.75)");
     flame.addColorStop(1, "rgba(255, 80, 20, 0)");
     ctx.fillStyle = flame;
     ctx.beginPath();
@@ -1168,7 +1491,7 @@ function drawBuilding(ctx: CanvasRenderingContext2D, item: Ent, theme: Theme, ti
   ctx.fillStyle = "rgba(18, 22, 34, 0.96)";
   round(ctx, signX, signY, signW, signH, 6);
   ctx.fill();
-  ctx.strokeStyle = "#e5b452";
+  ctx.strokeStyle = goldColor;
   ctx.lineWidth = 2;
   ctx.stroke();
 
@@ -1188,7 +1511,7 @@ function drawBuilding(ctx: CanvasRenderingContext2D, item: Ent, theme: Theme, ti
 
   // Draw Badge (Gold on dark)
   if (badge) {
-    ctx.fillStyle = "#e5b452";
+    ctx.fillStyle = goldColor;
     ctx.font = "bold 9px Georgia";
     ctx.textAlign = "center";
     ctx.fillText(badge, w / 2, signY + 12);
@@ -1215,7 +1538,7 @@ function drawBuilding(ctx: CanvasRenderingContext2D, item: Ent, theme: Theme, ti
 
   // 6. Floating animated interaction beacon
   const beaconBob = Math.sin(time * 3.5 + item.id) * 3;
-  ctx.fillStyle = "#e5b452";
+  ctx.fillStyle = goldColor;
   round(ctx, w / 2 - 46, signY + signH + 4 + beaconBob, 92, 16, 8);
   ctx.fill();
   ctx.fillStyle = "#1e140d";

@@ -560,6 +560,73 @@ export function worldOfBlock(block: number) {
   return WORLDS.find((world) => world.block === block)!;
 }
 
+export type NextLevelInfo = {
+  nextId: string;
+  nextLabel: string;
+  isBoss: boolean;
+  isNextBlock: boolean;
+};
+
+export function getNextLevel(currentLevelId: string): NextLevelInfo | null {
+  const topicIndex = TOPICS.findIndex((t) => t.id === currentLevelId);
+  if (topicIndex >= 0) {
+    const currentTopic = TOPICS[topicIndex];
+    const nextTopic = TOPICS[topicIndex + 1];
+    if (nextTopic && nextTopic.block === currentTopic.block) {
+      return {
+        nextId: nextTopic.id,
+        nextLabel: `${nextTopic.id}: ${nextTopic.short}`,
+        isBoss: false,
+        isNextBlock: false,
+      };
+    }
+    const world = worldOfBlock(currentTopic.block);
+    return {
+      nextId: `${world.id}-boss`,
+      nextLabel: `Jefe: ${world.bossName}`,
+      isBoss: true,
+      isNextBlock: false,
+    };
+  }
+
+  if (currentLevelId.endsWith("-boss")) {
+    const worldId = currentLevelId.replace("-boss", "");
+    const worldIndex = WORLDS.findIndex((w) => w.id === worldId);
+    if (worldIndex >= 0) {
+      const nextWorld = WORLDS[worldIndex + 1];
+      if (nextWorld && nextWorld.block) {
+        const nextTopics = topicsOfBlock(nextWorld.block);
+        if (nextTopics.length > 0) {
+          return {
+            nextId: nextTopics[0].id,
+            nextLabel: `${nextWorld.name} · ${nextTopics[0].id}`,
+            isBoss: false,
+            isNextBlock: true,
+          };
+        }
+      } else if (nextWorld && nextWorld.id === "final") {
+        return {
+          nextId: "exam-hall",
+          nextLabel: "Examen Oficial A2 (Gran Salón)",
+          isBoss: false,
+          isNextBlock: true,
+        };
+      }
+    }
+  }
+
+  if (currentLevelId === "exam-hall") {
+    return {
+      nextId: "exam",
+      nextLabel: "Tribunal Calificador (Comenzar Examen)",
+      isBoss: false,
+      isNextBlock: true,
+    };
+  }
+
+  return null;
+}
+
 export const WATCHED_LAWS: { id: string; title: string; topics: string[] }[] = [
   { id: "BOE-A-1978-31229", title: "Constitución Española", topics: ["I-1", "I-2", "I-3", "I-4", "I-5", "I-6", "I-7"] },
   { id: "BOE-A-2015-10565", title: "Ley 39/2015, LPAC", topics: ["IV-4", "IV-10", "IV-11", "IV-12", "III-1"] },
