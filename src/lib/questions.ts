@@ -317,6 +317,132 @@ function shuffle<T>(list: T[], rng: () => number) {
   return copy;
 }
 
+function buildTopicQuestions(): Question[] {
+  const dynamic: Question[] = [];
+  const allPoints = TOPICS.flatMap((t) => t.points);
+  const allTraps = TOPICS.map((t) => t.trap);
+  const allLaws = Array.from(new Set(TOPICS.flatMap((t) => t.laws.map((l) => l.name))));
+  const allVoices = TOPICS.map((t) => t.voice);
+  const allTitles = TOPICS.map((t) => t.title);
+
+  TOPICS.forEach((topic, tIdx) => {
+    const blockTopics = TOPICS.filter((t) => t.block === topic.block && t.id !== topic.id);
+    const blockPoints = blockTopics.flatMap((t) => t.points);
+    const blockTraps = blockTopics.map((t) => t.trap);
+    const blockTitles = blockTopics.map((t) => t.title);
+
+    const getDistractors = (correct: string, source: string[], count = 3): string[] => {
+      const filtered = source.filter((item) => item !== correct && item.trim().length > 0);
+      const chosen: string[] = [];
+      let offset = tIdx;
+      while (chosen.length < count && filtered.length > 0) {
+        const candidate = filtered[(offset++) % filtered.length];
+        if (!chosen.includes(candidate)) {
+          chosen.push(candidate);
+        }
+      }
+      return chosen;
+    };
+
+    // 1. Trap question (high-yield exam pitfall)
+    if (topic.trap) {
+      const trapDistractors = getDistractors(topic.trap, blockTraps.length >= 3 ? blockTraps : allTraps, 3);
+      dynamic.push({
+        id: `${topic.id}-trap`,
+        topic: topic.id,
+        d: 2,
+        q: `En el examen sobre "${topic.short}", ¿cuál de las siguientes precisiones jurídicas es la CORRECTA?`,
+        o: [topic.trap, ...trapDistractors],
+        a: 0,
+        e: `¡Cuidado con la trampa típica de oposición!: ${topic.trap}`,
+      });
+    }
+
+    // 2. Point-based questions for each point (points 0 to 4)
+    topic.points.forEach((point, pIdx) => {
+      const pointDistractors = getDistractors(point, blockPoints.length >= 3 ? blockPoints : allPoints, 3);
+      const d = (pIdx === 0 ? 1 : pIdx <= 2 ? 2 : 3) as 1 | 2 | 3;
+      const prompts = [
+        `Respecto a "${topic.title}", señale la afirmación correcta:`,
+        `En el marco normativo de "${topic.short}", ¿qué regla resulta de aplicación preceptiva?`,
+        `Conforme al temario de "${topic.short}", señale la opción VERDADERA:`,
+        `Sobre el régimen jurídico de "${topic.short}", es jurídicamente exacto que:`,
+        `En relación con "${topic.short}", ¿cuál es el principio aplicable en la Administración?`,
+      ];
+      dynamic.push({
+        id: `${topic.id}-pt${pIdx + 1}`,
+        topic: topic.id,
+        d,
+        q: prompts[pIdx % prompts.length],
+        o: [point, ...pointDistractors],
+        a: 0,
+        e: `Punto clave del tema: ${point}`,
+      });
+    });
+
+    // 3. Question on legal framework
+    if (topic.laws.length > 0) {
+      const lawName = topic.laws.map((l) => l.name).join("; ");
+      const otherLaws = allLaws.filter((l) => !topic.laws.some((tl) => tl.name === l));
+      const lawDistractors = getDistractors(lawName, otherLaws, 3);
+      dynamic.push({
+        id: `${topic.id}-law`,
+        topic: topic.id,
+        d: 1,
+        q: `¿Cuál es el marco legislativo fundamental regulador de "${topic.short}"?`,
+        o: [lawName, ...lawDistractors],
+        a: 0,
+        e: `La regulación básica aplicable es: ${lawName}.`,
+      });
+    }
+
+    // 4. Practical case / scenario question
+    if (topic.points.length >= 2) {
+      const bestPt = topic.points[1] || topic.points[0];
+      const caseDistractors = getDistractors(bestPt, blockPoints.length >= 3 ? blockPoints : allPoints, 3);
+      dynamic.push({
+        id: `${topic.id}-caso`,
+        topic: topic.id,
+        d: 3,
+        q: `En un supuesto práctico sobre "${topic.short}", el gestor debe resolver aplicando que:`,
+        o: [bestPt, ...caseDistractors],
+        a: 0,
+        e: `Criterio técnico aplicable al caso: ${bestPt}`,
+      });
+    }
+
+    // 5. Synthesis / Scope question
+    const titleDistractors = getDistractors(topic.title, blockTitles.length >= 3 ? blockTitles : allTitles, 3);
+    dynamic.push({
+      id: `${topic.id}-scope`,
+      topic: topic.id,
+      d: 1,
+      q: `¿A qué epígrafe del programa oficial corresponde la materia de "${topic.short}"?`,
+      o: [topic.title, ...titleDistractors],
+      a: 0,
+      e: `Epígrafe oficial del bloque ${topic.block}: ${topic.title}`,
+    });
+
+    // 6. Mentor voice question
+    if (topic.voice) {
+      const voiceDistractors = getDistractors(topic.voice, allVoices, 3);
+      dynamic.push({
+        id: `${topic.id}-voice`,
+        topic: topic.id,
+        d: 2,
+        q: `En la preparación de "${topic.short}", el preparador destaca especialmente:`,
+        o: [topic.voice, ...voiceDistractors],
+        a: 0,
+        e: `Consejo del preparador: ${topic.voice}`,
+      });
+    }
+  });
+
+  return dynamic;
+}
+
+export const ALL_QUESTIONS: Question[] = [...QUESTIONS, ...buildTopicQuestions()];
+
 export function presentQuestion(question: Question, rng: () => number): Question {
   const order = shuffle(question.o.map((text, index) => ({ text, index })), rng);
   return {
@@ -341,12 +467,28 @@ export function selectQuestions(opts: {
   seed?: number;
 }) {
   const rng = mulberry32(opts.seed ?? Date.now());
-  const pool = [...QUESTIONS, ...(opts.extras ?? [])].filter((item) => opts.topicIds.includes(item.topic));
+  const pool = [...ALL_QUESTIONS, ...(opts.extras ?? [])].filter((item) => opts.topicIds.includes(item.topic));
   const excluded = new Set(opts.exclude ?? []);
-  let usable = pool.filter((item) => !excluded.has(item.id));
-  if (usable.length < Math.min(opts.count, pool.length)) usable = pool;
-  const ordered = shuffle(usable, rng).sort((a, b) => rank(opts.difficulty, a) - rank(opts.difficulty, b));
-  return ordered.slice(0, opts.count).map((item) => presentQuestion(item, rng));
+
+  // Partition into unseen (fresh) and previously seen questions
+  const fresh = pool.filter((item) => !excluded.has(item.id));
+  const seen = pool.filter((item) => excluded.has(item.id));
+
+  const rankWithJitter = (list: Question[]) =>
+    shuffle(list, rng).sort((a, b) => {
+      const diffA = rank(opts.difficulty, a) + rng() * 1.4;
+      const diffB = rank(opts.difficulty, b) + rng() * 1.4;
+      return diffA - diffB;
+    });
+
+  const sortedFresh = rankWithJitter(fresh);
+  const pickedFresh = sortedFresh.slice(0, opts.count);
+  const remainder = opts.count - pickedFresh.length;
+  const sortedSeen = rankWithJitter(seen);
+  const pickedSeen = remainder > 0 ? sortedSeen.slice(0, remainder) : [];
+
+  const finalQuestions = [...pickedFresh, ...pickedSeen];
+  return finalQuestions.map((item) => presentQuestion(item, rng));
 }
 
 export function examSet(difficulty: Difficulty, exclude: string[] = [], extras: Question[] = [], seed = Date.now()) {
@@ -388,5 +530,5 @@ export function pickCaso(seed = Date.now()) {
 }
 
 export function questionCount() {
-  return QUESTIONS.length + CASOS.reduce((sum, caso) => sum + caso.questions.length, 0);
+  return ALL_QUESTIONS.length + CASOS.reduce((sum, caso) => sum + caso.questions.length, 0);
 }

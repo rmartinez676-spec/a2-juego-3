@@ -1218,12 +1218,12 @@ function drawBuilding(ctx: CanvasRenderingContext2D, item: Ent, theme: Theme, ti
   // 6. Floating animated interaction beacon
   const beaconBob = Math.sin(time * 3.5 + item.id) * 3;
   ctx.fillStyle = "#e5b452";
-  round(ctx, w / 2 - 28, signY + signH + 4 + beaconBob, 56, 15, 7);
+  round(ctx, w / 2 - 46, signY + signH + 4 + beaconBob, 92, 16, 8);
   ctx.fill();
   ctx.fillStyle = "#1e140d";
-  ctx.font = "bold 9px Georgia";
+  ctx.font = "bold 9px sans-serif";
   ctx.textAlign = "center";
-  ctx.fillText("▶ ENTRAR", w / 2, signY + signH + 15 + beaconBob);
+  ctx.fillText("▲ ENTRAR (W / ↑)", w / 2, signY + signH + 15 + beaconBob);
 
   ctx.restore();
 }

@@ -192,11 +192,16 @@ export default function GameApp() {
       if (["ArrowLeft", "ArrowRight", "ArrowUp", " ", "KeyM"].includes(event.code)) event.preventDefault();
       if (event.code === "ArrowLeft" || event.code === "KeyA") inputRef.current.left = down;
       if (event.code === "ArrowRight" || event.code === "KeyD") inputRef.current.right = down;
-      if (event.code === "ArrowUp" || event.code === "Space" || event.code === "KeyK" || event.code === "KeyZ") {
-        if (down && !event.repeat) inputRef.current.jumpPressed = true;
+      if (event.code === "ArrowUp" || event.code === "Space" || event.code === "KeyW" || event.code === "KeyK" || event.code === "KeyZ") {
+        if (down && !event.repeat) {
+          inputRef.current.jumpPressed = true;
+          inputRef.current.actionPressed = true;
+        }
         inputRef.current.jumpHeld = down;
       }
-      if ((event.code === "KeyE" || event.code === "Enter" || event.code === "KeyJ") && down && !event.repeat) inputRef.current.actionPressed = true;
+      if ((event.code === "KeyE" || event.code === "Enter" || event.code === "KeyJ" || event.code === "KeyW") && down && !event.repeat) {
+        inputRef.current.actionPressed = true;
+      }
       if (event.code === "KeyM" && down && !event.repeat) toggleMute();
       if (event.code === "Escape" && down) setPaused((value) => !value);
     };
@@ -266,6 +271,56 @@ export default function GameApp() {
     frame = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(frame);
   }, [screen, paused]);
+
+  const handleCanvasTouch = useCallback((e: React.TouchEvent<HTMLCanvasElement>) => {
+    if (e.type === "touchstart" || e.type === "touchmove") {
+      if (e.cancelable) e.preventDefault();
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const rect = canvas.getBoundingClientRect();
+
+      let moveLeft = false;
+      let moveRight = false;
+      let jump = false;
+      let action = false;
+
+      for (let i = 0; i < e.touches.length; i++) {
+        const touch = e.touches[i];
+        const relX = (touch.clientX - rect.left) / rect.width;
+        const relY = (touch.clientY - rect.top) / rect.height;
+
+        if (relX < 0.42) {
+          moveLeft = true;
+        } else if (relX > 0.58) {
+          moveRight = true;
+        } else {
+          action = true;
+        }
+
+        if (relY < 0.45 || e.touches.length > 1) {
+          jump = true;
+        }
+      }
+
+      inputRef.current.left = moveLeft;
+      inputRef.current.right = moveRight;
+      if (jump) {
+        if (!inputRef.current.jumpHeld) {
+          inputRef.current.jumpPressed = true;
+        }
+        inputRef.current.jumpHeld = true;
+      }
+      if (action) {
+        inputRef.current.actionPressed = true;
+      }
+    } else if (e.type === "touchend" || e.type === "touchcancel") {
+      if (e.touches.length === 0) {
+        inputRef.current.left = false;
+        inputRef.current.right = false;
+        inputRef.current.jumpHeld = false;
+      }
+    }
+  }, []);
 
   const fetchQuestions = useCallback(async (topicIds: string[], count: number, levelId: string) => {
     const seed = Date.now();
@@ -610,10 +665,21 @@ export default function GameApp() {
           <div className="playfield">
             <div className="controls-hint-bar">
               <span><strong>Mover:</strong> ⬅️ ➡️ o A/D</span>
-              <span><strong>Saltar:</strong> ⬆️ o ESPACIO</span>
-              <span><strong>Hablar / Entrar:</strong> E o ENTER</span>
+              <span><strong>Saltar / Entrar:</strong> ⬆️ o ESPACIO o W</span>
+              <span><strong>Hablar:</strong> E o ENTER</span>
             </div>
-            <canvas ref={canvasRef} />
+            <canvas
+              ref={canvasRef}
+              onTouchStart={handleCanvasTouch}
+              onTouchMove={handleCanvasTouch}
+              onTouchEnd={handleCanvasTouch}
+              onTouchCancel={handleCanvasTouch}
+            />
+            <div className="touch-screen-hints">
+              <span className="touch-hint-zone">◀ Toca izq para correr</span>
+              <span className="touch-hint-zone">▲ Arriba: saltar / entrar</span>
+              <span className="touch-hint-zone">Toca der para correr ▶</span>
+            </div>
             {overlay?.type === "dialogue" && <Dialogue pending={overlay} onQuiz={() => { const current = runRef.current; if (!current) return; if (overlay.topicId) offerNpcQuiz(current); else acceptDialogue(current); showPendingRef.current(current.pending); }} onClose={() => { const current = runRef.current; if (!current) return; acceptDialogue(current); shownRef.current = ""; setOverlay(null); }} />}
             {overlay?.type === "quiz" && (
               <Quiz
@@ -679,9 +745,34 @@ export default function GameApp() {
                   {failed && <p>Las preguntas del siguiente intento serán otras. El mapa no se cierra.</p>}
                   {paused && !result && !failed && <Help />}
                   <div className="row">
+                    {result && (
+                      <button className="primary" onClick={() => {
+                        setPaused(false);
+                        if (runRef.current?.worldId && runRef.current.worldId !== "hub" && runRef.current.mode !== "hub") {
+                          launch(startMap(runRef.current.worldId, difficulty));
+                        } else {
+                          launch(startHub(difficulty));
+                        }
+                      }}>
+                        Seguir ▶
+                      </button>
+                    )}
                     {!result && !failed && <button className="primary" onClick={() => setPaused(false)}>Seguir</button>}
-                    {(failed || result) && runRef.current && <button className="primary" onClick={() => enter(runRef.current?.levelId || "hub")}>Reintentar</button>}
-                    <button className="ghost" onClick={() => { setPaused(false); if (runRef.current?.worldId && runRef.current.worldId !== "hub" && runRef.current.mode !== "hub") launch(startMap(runRef.current.worldId, difficulty)); else launch(startHub(difficulty)); }}>Volver</button>
+                    {(failed || result) && runRef.current && (
+                      <button className="ghost" onClick={() => enter(runRef.current?.levelId || "hub")}>
+                        Reintentar
+                      </button>
+                    )}
+                    <button className="ghost" onClick={() => {
+                      setPaused(false);
+                      if (runRef.current?.worldId && runRef.current.worldId !== "hub" && runRef.current.mode !== "hub") {
+                        launch(startMap(runRef.current.worldId, difficulty));
+                      } else {
+                        launch(startHub(difficulty));
+                      }
+                    }}>
+                      Volver al mapa
+                    </button>
                   </div>
                 </section>
               </div>
@@ -859,7 +950,10 @@ export default function GameApp() {
               <ChromaImg src={SPRITES.cheer} alt="Alba al terminar" />
               <h2>{scoreLine(examTotals, examTotals.asked || questions.length)}</h2>
               <p>La nota del simulacro usa la fórmula del primer ejercicio: aciertos menos un tercio de los errores, sobre 50. Las blancas no restan. El supuesto real se valora aparte; aquí suma como un segundo bloque de preguntas.</p>
-              <button className="primary" onClick={() => setExamPhase("intro")}>Otro intento</button>
+              <div className="row">
+                <button className="primary" onClick={() => setScreen("title")}>Seguir ▶</button>
+                <button className="ghost" onClick={() => setExamPhase("intro")}>Otro intento</button>
+              </div>
             </article>
           )}
         </section>
@@ -871,9 +965,10 @@ export default function GameApp() {
 function Help() {
   return (
     <div className="stack">
-      <p>Flechas o WASD para correr. Espacio salta. E habla, abre un bloque ? o entra en un portal. En el móvil usa los botones de abajo: el juego se encoge para caber entero en horizontal.</p>
+      <p><strong>En ordenador:</strong> Flechas o WASD para correr. <strong>Espacio, W o ⬆️</strong> salta y entra en los palacios. <strong>E o ENTER</strong> habla o interactúa. También puedes entrar a los palacios caminando por su puerta.</p>
+      <p><strong>En móvil y tablet:</strong> Juega directamente tocando la pantalla sin botones (toca a la izquierda/derecha para correr, y arriba para saltar o entrar al palacio).</p>
       <p>Cada tema es un submundo. El personaje explica la ficha y luego te examina. Los jefes preguntan de todo el bloque, con otra música. El aula final mezcla el programa.</p>
-      <p>M silencia la música de verdad. La dificultad cambia el tipo de pregunta, los corazones y la penalización.</p>
+      <p>M silencia la música. La dificultad cambia el tipo de pregunta, los corazones y la penalización.</p>
     </div>
   );
 }

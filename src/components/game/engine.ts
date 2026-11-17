@@ -735,8 +735,13 @@ export function step(run: Run, dt: number, input: Input) {
     }
     // Auto-trigger dialogue when passing by an NPC - no need to press Enter!
     const autoPassNpc = item.kind === "npc" && !run.talked && near.dist < 46;
+    // Enter castle/portal directly by walking through the door or pressing Jump / Up / Action (W, Space, Enter)
+    const portalEnter = item.kind === "portal" && (
+      (near.dist < 26 && body.onGround) ||
+      ((input.actionPressed || input.jumpPressed) && near.dist < 48)
+    );
 
-    if (input.actionPressed || headHit || autoPassNpc) {
+    if (input.actionPressed || headHit || autoPassNpc || portalEnter) {
       if (item.kind === "npc" && run.topicId) openPending(run, { type: "dialogue", npcId: item.ref, topicId: run.topicId });
       else if (item.kind === "npc") openPending(run, { type: "dialogue", npcId: item.ref, topicId: "" });
       else if (item.kind === "panel") openPending(run, { type: "panel", id: item.ref as "codex" });
