@@ -209,44 +209,68 @@ export function startHub(difficulty: Difficulty): Run {
     theme: "plaza",
     music: "hub",
     worldId: "hub",
-    W: 62,
+    W: 66,
     H: 14,
     difficulty,
   });
   setGround(run, 11);
-  for (let x = 4; x < 8; x++) run.tiles[8 * run.W + x] = 2;
-  for (let x = 14; x < 18; x++) run.tiles[7 * run.W + x] = 2;
+
+  // Stepped accessible terrace platforms (every step is reachable from the previous one)
+  // Tier 1 (height 9 = 2 tiles up from ground, 100% reachable with single hop)
+  for (let x = 3; x < 7; x++) run.tiles[9 * run.W + x] = 2;
+  // Tier 2 (height 7 = 2 tiles up from Tier 1, easily hopped onto from Tier 1)
+  for (let x = 6; x < 10; x++) run.tiles[7 * run.W + x] = 2;
+  // Tier 3 (height 5 = high panoramic viewpoint)
+  for (let x = 9; x < 13; x++) run.tiles[5 * run.W + x] = 2;
+
+  // Second stepped terrace next to the fountain
+  for (let x = 14; x < 18; x++) run.tiles[9 * run.W + x] = 2;
+  for (let x = 17; x < 21; x++) run.tiles[7 * run.W + x] = 2;
+
   const id = () => run.nextId++;
+  // Spring pad to launch high up into the air
+  run.entities.push(ent({ kind: "spring", x: 2 * T, y: 11 * T - 22, w: 40, h: 22, label: "Super Salto" }, id));
+
+  // Collectible reward seals placed on upper platforms
+  run.entities.push(ent({ kind: "article", x: 5 * T + 12, y: 9 * T - 32, w: 22, h: 22, variant: 1 }, id));
+  run.entities.push(ent({ kind: "article", x: 8 * T + 12, y: 7 * T - 32, w: 22, h: 22, variant: 2 }, id));
+  run.entities.push(ent({ kind: "article", x: 11 * T + 12, y: 5 * T - 32, w: 22, h: 22, variant: 3 }, id));
+  run.entities.push(ent({ kind: "article", x: 19 * T + 12, y: 7 * T - 32, w: 22, h: 22, variant: 4 }, id));
+
   run.entities.push(ent({ kind: "npc", x: 210, y: 11 * T - 78, w: 46, h: 78, ref: "pilar", label: "Doña Pilar" }, id));
   run.entities.push(ent({ kind: "deco", x: 340, y: 11 * T - 70, w: 90, h: 70, ref: "fountain", variant: 1 }, id));
+
   const panels: Array<[number, string, string]> = [
     [10, "help", "Cómo jugar"],
-    [13, "codex", "Temario"],
-    [16, "boe", "BOE"],
+    [13, "codex", "Temario 58"],
+    [16, "boe", "Radar BOE"],
     [19, "difficulty", "Dificultad"],
   ];
   panels.forEach(([tile, ref, label]) => {
-    run.entities.push(ent({ kind: "panel", x: tile * T, y: 11 * T - 92, w: 64, h: 92, ref, label }, id));
+    run.entities.push(ent({ kind: "panel", x: tile * T, y: 11 * T - 110, w: 90, h: 110, ref, label }, id));
   });
+
   WORLDS.filter((world) => world.id !== "hub").forEach((world, index) => {
+    const isExam = world.id === "final";
     run.entities.push(
       ent({
         kind: "portal",
-        x: (23 + index * 5) * T,
-        y: 11 * T - 120,
-        w: 78,
-        h: 120,
-        ref: world.id === "final" ? "exam-hall" : `map-${world.id}`,
-        label: world.id === "final" ? "Examen" : world.name.split(" ").slice(0, 2).join(" "),
+        x: (23 + index * 6) * T,
+        y: 11 * T - 136,
+        w: 116,
+        h: 136,
+        ref: isExam ? "exam-hall" : `map-${world.id}`,
+        label: isExam ? "Examen Oficial A2" : world.name,
         variant: index,
       }, id),
     );
   });
-  for (let i = 0; i < 8; i++) {
-    run.entities.push(ent({ kind: "deco", x: 80 + i * 320, y: 11 * T - 54, w: 28, h: 54, ref: i % 2 ? "banner" : "lamp", variant: i }, id));
+
+  for (let i = 0; i < 9; i++) {
+    run.entities.push(ent({ kind: "deco", x: 80 + i * 340, y: 11 * T - 54, w: 28, h: 54, ref: i % 2 ? "banner" : "lamp", variant: i }, id));
   }
-  run.toast = "Camina a la derecha. Cada puerta es un bloque; la última es el examen.";
-  run.toastT = 5;
+  run.toast = "Camina a la derecha. Cada edificio es un bloque del temario; el último es el Examen.";
+  run.toastT = 5.5;
   run.player.x = 90;
   run.player.y = 11 * T - run.player.h;
   return run;
@@ -256,8 +280,8 @@ export function startMap(worldId: string, difficulty: Difficulty): Run {
   const world = WORLDS.find((item) => item.id === worldId) ?? WORLDS[1];
   const topics = topicsOfBlock(world.block ?? 1);
   const nodes = [
-    ...topics.map((topic) => ({ id: topic.id, label: topic.short })),
-    { id: `${world.id}-boss`, label: "Jefe final" },
+    ...topics.map((topic) => ({ id: topic.id, label: `${topic.id}: ${topic.title}` })),
+    { id: `${world.id}-boss`, label: `Jefe: ${world.bossName}` },
   ];
   const run = baseRun({
     mode: "map",
@@ -267,16 +291,24 @@ export function startMap(worldId: string, difficulty: Difficulty): Run {
     theme: world.theme,
     music: `map-${world.id}`,
     worldId: world.id,
-    W: 8 + nodes.length * 6,
+    W: 10 + nodes.length * 6,
     H: 14,
     difficulty,
   });
   setGround(run, 11);
+
+  // Stepping platforms between nodes so player can jump and traverse
+  for (let i = 0; i < nodes.length; i++) {
+    const px = 4 + i * 6 + 3;
+    run.tiles[9 * run.W + px] = 2;
+    run.tiles[9 * run.W + px + 1] = 2;
+  }
+
   const id = () => run.nextId++;
   nodes.forEach((node, index) => {
     const x = (4 + index * 6) * T;
-    run.entities.push(ent({ kind: "portal", x, y: 11 * T - 108, w: 78, h: 108, ref: node.id, label: node.label, variant: index }, id));
-    if (index % 2 === 0) run.entities.push(ent({ kind: "deco", x: x + 110, y: 11 * T - 64, w: 40, h: 64, ref: "tree", variant: index }, id));
+    run.entities.push(ent({ kind: "portal", x, y: 11 * T - 136, w: 116, h: 136, ref: node.id, label: node.label, variant: index }, id));
+    if (index % 2 === 0) run.entities.push(ent({ kind: "deco", x: x + 130, y: 11 * T - 64, w: 40, h: 64, ref: "tree", variant: index }, id));
   });
   run.player.x = 70;
   run.player.y = 11 * T - run.player.h;
@@ -315,29 +347,40 @@ export function startStage(topicId: string, attempt: number, difficulty: Difficu
     }
   }
   setGround(run, ground, gaps);
-  for (let i = 0; i < 7; i++) {
-    const px = 6 + Math.floor(random() * (W - 14));
-    const py = ground - 3 - Math.floor(random() * 2);
-    const len = 3 + Math.floor(random() * 3);
-    for (let k = 0; k < len; k++) {
-      if (px + k > 2 && px + k < W - 2) run.tiles[py * W + px + k] = 2;
+
+  // Stepped platform clusters with guaranteed accessibility from the ground
+  const clusterCount = Math.max(5, Math.floor(W / 10));
+  for (let i = 0; i < clusterCount; i++) {
+    const cx = 7 + i * 9 + Math.floor(random() * 2);
+    // Lower tier (ground - 2 = height 9) - 100% reachable with a normal jump from ground
+    for (let k = 0; k < 3; k++) {
+      if (cx + k > 2 && cx + k < W - 2) run.tiles[(ground - 2) * W + cx + k] = 2;
+    }
+    // Upper tier (ground - 4 = height 7) - reachable by jumping from the lower tier
+    for (let k = 1; k < 4; k++) {
+      if (cx + k + 1 > 2 && cx + k + 1 < W - 2) run.tiles[(ground - 4) * W + cx + k + 1] = 2;
     }
   }
+
   const id = () => run.nextId++;
   const npc = NPC_BY_ID.get(topic.npc);
   run.entities.push(ent({ kind: "npc", x: Math.floor(W * 0.38) * T, y: ground * T - 78, w: 46, h: 78, ref: topic.npc, label: npc?.name ?? "Guía" }, id));
+
   const blockCount = difficulty === "aprendiz" ? 3 : 4;
   for (let i = 0; i < blockCount; i++) {
     const tx = 8 + Math.floor(random() * (W - 16));
-    const ty = ground - 4;
+    // Placed at ground - 3 so it can be hit from below by jumping from the ground
+    const ty = ground - 3;
     run.entities.push(ent({ kind: "qblock", x: tx * T + 6, y: ty * T, w: 36, h: 36, ref: topic.id, label: "?" }, id));
   }
+
   const articles = 8 + Math.floor(random() * 4);
   for (let i = 0; i < articles; i++) {
     const tx = 4 + Math.floor(random() * (W - 8));
-    const ty = ground - 2 - Math.floor(random() * 3);
+    const ty = ground - 2 - (i % 2) * 2;
     run.entities.push(ent({ kind: "article", x: tx * T + 12, y: ty * T, w: 22, h: 22, variant: i }, id));
   }
+
   const enemies = difficulty === "aprendiz" ? 3 : difficulty === "gestor" ? 5 : 6;
   for (let i = 0; i < enemies; i++) {
     const tx = 9 + Math.floor(random() * (W - 14));
@@ -346,9 +389,9 @@ export function startStage(topicId: string, attempt: number, difficulty: Difficu
       ent({
         kind: "enemy",
         x: tx * T,
-        y: ground * T - 32,
-        w: 30,
-        h: 30,
+        y: ground * T - 34,
+        w: 34,
+        h: 34,
         vx: (random() < 0.5 ? -1 : 1) * (difficulty === "oposicion" || difficulty === "examen" ? 70 : 48),
         minX: (tx - 3) * T,
         maxX: (tx + 3) * T,
@@ -356,9 +399,11 @@ export function startStage(topicId: string, attempt: number, difficulty: Difficu
       }, id),
     );
   }
+
   if (difficulty !== "examen") {
-    run.entities.push(ent({ kind: "spring", x: Math.floor(W * 0.62) * T, y: ground * T - 22, w: 40, h: 22, label: "Código" }, id));
+    run.entities.push(ent({ kind: "spring", x: Math.floor(W * 0.62) * T, y: ground * T - 22, w: 40, h: 22, label: "Salto" }, id));
   }
+
   for (let i = 0; i < 8; i++) {
     const tx = 3 + Math.floor(random() * (W - 6));
     run.entities.push(ent({ kind: "deco", x: tx * T, y: ground * T - 58, w: 34, h: 58, ref: ["tree", "lamp", "banner", "book"][i % 4], variant: i }, id));
@@ -386,33 +431,47 @@ export function startBoss(worldId: string, difficulty: Difficulty): Run {
     theme: world.theme,
     music: `boss-${world.block ?? 1}`,
     worldId: world.id,
-    W: 24,
+    W: 28,
     H: 14,
     difficulty,
   });
   setGround(run, 11);
-  for (let x = 4; x < 9; x++) run.tiles[8 * run.W + x] = 2;
-  for (let x = 15; x < 20; x++) run.tiles[7 * run.W + x] = 2;
-  for (let x = 9; x < 15; x++) run.tiles[5 * run.W + x] = 2;
+
+  // Tiered arena platforms for dynamic vertical Mario-style combat
+  // Left steps
+  for (let x = 3; x < 7; x++) run.tiles[9 * run.W + x] = 2;
+  for (let x = 5; x < 9; x++) run.tiles[7 * run.W + x] = 2;
+
+  // Center high vantage platform
+  for (let x = 12; x < 16; x++) run.tiles[7 * run.W + x] = 2;
+
+  // Right steps
+  for (let x = 19; x < 23; x++) run.tiles[7 * run.W + x] = 2;
+  for (let x = 21; x < 25; x++) run.tiles[9 * run.W + x] = 2;
+
   const id = () => run.nextId++;
+  // Spring pads on both wings for acrobatic high leaps
+  run.entities.push(ent({ kind: "spring", x: 2 * T, y: 11 * T - 22, w: 40, h: 22, label: "Salto" }, id));
+  run.entities.push(ent({ kind: "spring", x: 25 * T, y: 11 * T - 22, w: 40, h: 22, label: "Salto" }, id));
+
   run.entities.push(
     ent({
       kind: "boss",
       x: 16 * T,
-      y: 11 * T - 92,
-      w: 78,
-      h: 92,
-      vx: 60,
-      minX: 8 * T,
-      maxX: 20 * T,
+      y: 11 * T - 100,
+      w: 92,
+      h: 100,
+      vx: 65,
+      minX: 7 * T,
+      maxX: 21 * T,
       label: world.bossName,
       ref: world.id,
     }, id),
   );
   run.bossMax = difficulty === "aprendiz" ? 4 : 6;
   run.bossHp = run.bossMax;
-  run.toast = world.bossLine;
-  run.toastT = 4.2;
+  run.toast = `¡Combate contra ${world.bossName}! Puedes pisotearle desde las plataformas o pulsar [E] para rebatirle.`;
+  run.toastT = 4.8;
   run.player.x = 80;
   run.player.y = 11 * T - run.player.h;
   return run;
@@ -527,12 +586,12 @@ export function step(run: Run, dt: number, input: Input) {
   else body.vx *= Math.max(0, 1 - 10 * dt);
   body.vx = Math.max(-speed, Math.min(speed, body.vx));
   if (Math.abs(body.vx) > 20) body.face = body.vx > 0 ? 1 : -1;
-  if (input.jumpPressed) body.buffer = 0.12;
+  if (input.jumpPressed) body.buffer = 0.14;
   else body.buffer = Math.max(0, body.buffer - dt);
-  if (body.onGround) body.coyote = 0.1;
+  if (body.onGround) body.coyote = 0.14;
   else body.coyote = Math.max(0, body.coyote - dt);
   if (body.buffer > 0 && body.coyote > 0) {
-    body.vy = -640;
+    body.vy = -680;
     body.buffer = 0;
     body.coyote = 0;
     body.onGround = false;
@@ -599,12 +658,27 @@ export function step(run: Run, dt: number, input: Input) {
       audio.sfx("jump");
     }
     if (item.kind === "enemy" && !item.dead && overlaps(body, item)) {
-      if (body.vy > 40 && body.y + body.h - item.y < 28) {
+      if (body.vy > 40 && body.y + body.h - item.y < 32) {
         item.dead = true;
-        body.vy = -420;
-        run.score += 8;
+        body.vy = -460;
+        run.score += 10;
         audio.sfx("stomp");
       } else hurt(run);
+    }
+    if (item.kind === "boss" && !item.dead && overlaps(body, item)) {
+      if (body.vy > 40 && body.y + body.h - item.y < 38) {
+        body.vy = -540;
+        run.bossHp = Math.max(0, run.bossHp - 1);
+        run.shake = 0.35;
+        audio.sfx("stomp");
+        if (run.bossHp <= 0) win(run);
+        else {
+          run.toast = `¡Pisotón certero a ${item.label}! Le quedan ${run.bossHp} vidas`;
+          run.toastT = 2.0;
+        }
+      } else if (run.iframe <= 0) {
+        hurt(run);
+      }
     }
   });
 

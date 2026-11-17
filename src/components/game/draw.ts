@@ -194,21 +194,38 @@ export function drawRun(ctx: CanvasRenderingContext2D, run: Run, width: number, 
   // Player
   drawPlayer(ctx, run);
 
-  // Floating paper notes / articles collected
+  // Floating paper notes / royal decrees thrown by the boss
   run.entities
     .filter((item) => item.kind === "paper" && !item.dead)
     .forEach((item) => {
       ctx.save();
-      ctx.translate(item.x + 8, item.y + 6);
-      ctx.rotate(Math.sin(run.time * 3 + item.id) * 0.15);
-      ctx.fillStyle = "#fffdfa";
-      ctx.fillRect(-9, -7, 18, 14);
-      ctx.strokeStyle = theme.ink;
-      ctx.lineWidth = 1;
-      ctx.strokeRect(-9, -7, 18, 14);
-      ctx.fillStyle = theme.accent;
-      ctx.fillRect(-6, -3, 12, 2);
-      ctx.fillRect(-6, 1, 8, 2);
+      ctx.translate(item.x + 9, item.y + 9);
+      ctx.rotate(run.time * 8 + item.id);
+
+      // Magical glowing trail
+      ctx.fillStyle = "rgba(244, 192, 70, 0.4)";
+      ctx.beginPath();
+      ctx.arc(-item.vx * 0.04, 0, 11, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Official parchment scroll with red wax seal
+      ctx.fillStyle = "#fffcf4";
+      ctx.fillRect(-10, -7, 20, 14);
+      ctx.strokeStyle = "#8b5a2b";
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(-10, -7, 20, 14);
+
+      // Red wax seal in center
+      ctx.fillStyle = "#c43328";
+      ctx.beginPath();
+      ctx.arc(0, 0, 4, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Written law lines
+      ctx.fillStyle = "#5c4033";
+      ctx.fillRect(-7, -4, 4, 1.5);
+      ctx.fillRect(3, -4, 4, 1.5);
+      ctx.fillRect(-7, 3, 14, 1.5);
       ctx.restore();
     });
 
@@ -659,23 +676,175 @@ function drawEntity(ctx: CanvasRenderingContext2D, run: Run, item: Ent, theme: T
     ctx.fillText(item.used ? "·" : "?", 18, 26);
     ctx.restore();
   } else if (item.kind === "enemy") {
-    // Bureaucratic Obstacle / Exam Trap
+    // Mario / Alex Kidd style animated retro obstacles
     ctx.save();
-    ctx.translate(item.x, item.y + Math.abs(Math.sin(run.time * 6 + item.id)) * 3);
-    ctx.fillStyle = "#f5efe6";
-    round(ctx, 0, 4, 32, 26, 8);
-    ctx.fill();
-    ctx.strokeStyle = theme.ink;
-    ctx.lineWidth = 2;
-    ctx.stroke();
+    const type = item.variant % 3;
+    const walkBob = Math.abs(Math.sin(run.time * 8 + item.id)) * 4;
+    const facing = item.vx >= 0 ? 1 : -1;
 
-    // Glasses & stern eyes
-    ctx.fillStyle = theme.ink;
-    ctx.strokeRect(5, 10, 8, 8);
-    ctx.strokeRect(19, 10, 8, 8);
-    ctx.fillRect(13, 13, 6, 2);
-    ctx.fillRect(8, 13, 3, 3);
-    ctx.fillRect(22, 13, 3, 3);
+    ctx.translate(item.x + item.w / 2, item.y + item.h);
+    ctx.scale(facing, 1);
+
+    // Soft drop shadow
+    ctx.fillStyle = "rgba(25, 14, 10, 0.28)";
+    ctx.beginPath();
+    ctx.ellipse(0, 1, 14, 4, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    if (type === 0) {
+      // 1. "El Sello Furioso" (Angry Rubber Stamp - Mario Goomba style)
+      // Stepping cartoon feet
+      const footStep = Math.sin(run.time * 10 + item.id) * 3;
+      ctx.fillStyle = "#8d3222";
+      round(ctx, -14, -6 + (footStep > 0 ? -3 : 0), 10, 6, 3);
+      ctx.fill();
+      round(ctx, 4, -6 + (footStep < 0 ? -3 : 0), 10, 6, 3);
+      ctx.fill();
+
+      // Stamp wooden handle
+      ctx.fillStyle = "#a87146";
+      ctx.fillRect(-4, -38 - walkBob, 8, 12);
+      ctx.beginPath();
+      ctx.arc(0, -38 - walkBob, 8, 0, Math.PI * 2);
+      ctx.fill();
+      // Brass collar
+      ctx.fillStyle = "#e5b452";
+      ctx.fillRect(-7, -27 - walkBob, 14, 4);
+
+      // Red rubber stamp body
+      ctx.fillStyle = "#c43328";
+      round(ctx, -15, -24 - walkBob, 30, 20, 6);
+      ctx.fill();
+      ctx.strokeStyle = "#60140e";
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      // Big cartoon expressive eyes
+      ctx.fillStyle = "#ffffff";
+      ctx.beginPath();
+      ctx.ellipse(-6, -15 - walkBob, 5, 6, 0, 0, Math.PI * 2);
+      ctx.ellipse(6, -15 - walkBob, 5, 6, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Pupils looking ahead
+      ctx.fillStyle = "#1b1420";
+      ctx.beginPath();
+      ctx.arc(-4, -15 - walkBob, 2.5, 0, Math.PI * 2);
+      ctx.arc(8, -15 - walkBob, 2.5, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Angry furrowed eyebrows
+      ctx.strokeStyle = "#4a120b";
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(-11, -21 - walkBob);
+      ctx.lineTo(-2, -18 - walkBob);
+      ctx.moveTo(11, -21 - walkBob);
+      ctx.lineTo(2, -18 - walkBob);
+      ctx.stroke();
+    } else if (type === 1) {
+      // 2. "El Expediente Alado" (Winged Dossier - Koopa Paratroopa / Alex Kidd style)
+      const wingFlap = Math.sin(run.time * 14 + item.id);
+      const floatY = -8 + Math.sin(run.time * 4 + item.id) * 5;
+
+      // Animated feathered wings behind body
+      ctx.save();
+      ctx.translate(0, floatY - 14);
+      ctx.fillStyle = "#ffffff";
+      ctx.strokeStyle = "#c0cad4";
+      ctx.lineWidth = 1.5;
+
+      // Left wing
+      ctx.save();
+      ctx.translate(-14, 0);
+      ctx.rotate(-0.35 + wingFlap * 0.45);
+      ctx.beginPath();
+      ctx.ellipse(-10, -4, 12, 6, -0.4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+
+      // Right wing
+      ctx.save();
+      ctx.translate(14, 0);
+      ctx.rotate(0.35 - wingFlap * 0.45);
+      ctx.beginPath();
+      ctx.ellipse(10, -4, 12, 6, 0.4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+      ctx.restore();
+
+      // Crimson official folder body
+      ctx.fillStyle = "#8c2436";
+      round(ctx, -14, floatY - 26, 28, 24, 4);
+      ctx.fill();
+      ctx.strokeStyle = "#4d101d";
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      // Gold seal badge in center
+      ctx.fillStyle = "#e5b452";
+      ctx.beginPath();
+      ctx.arc(0, floatY - 14, 5, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Peeking cute cartoon eyes
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(-9, floatY - 22, 6, 7);
+      ctx.fillRect(3, floatY - 22, 6, 7);
+      ctx.fillStyle = "#15101a";
+      ctx.fillRect(-7, floatY - 20, 3, 4);
+      ctx.fillRect(5, floatY - 20, 3, 4);
+    } else {
+      // 3. "El Reloj Tic-Tac" (Official Stopwatch - Bob-omb / Alex Kidd style)
+      const tickBob = Math.sin(run.time * 8 + item.id) * 2;
+      // Spinning wind-up key on top
+      ctx.save();
+      ctx.translate(0, -32 - tickBob);
+      ctx.rotate(run.time * 6);
+      ctx.fillStyle = "#e5b452";
+      round(ctx, -7, -2.5, 14, 5, 2);
+      ctx.fill();
+      ctx.restore();
+
+      // Metal ring & neck
+      ctx.fillStyle = "#c89b38";
+      ctx.fillRect(-2, -30 - tickBob, 4, 4);
+
+      // Gold pocket watch round body
+      ctx.fillStyle = "#e5b452";
+      ctx.beginPath();
+      ctx.arc(0, -15 - tickBob, 15, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = "#8d6418";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // Clock face
+      ctx.fillStyle = "#fffcf4";
+      ctx.beginPath();
+      ctx.arc(0, -15 - tickBob, 11, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Angry clock eyes & needle hands
+      ctx.fillStyle = "#1b1420";
+      ctx.fillRect(-6, -18 - tickBob, 3, 4);
+      ctx.fillRect(3, -18 - tickBob, 3, 4);
+      // Spinning clock needles
+      ctx.strokeStyle = "#a42218";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(0, -15 - tickBob);
+      ctx.lineTo(Math.sin(run.time * 5) * 6, -15 - tickBob - Math.cos(run.time * 5) * 6);
+      ctx.stroke();
+
+      // Little mechanical stepping feet
+      const footStep = Math.sin(run.time * 10 + item.id) * 2.5;
+      ctx.fillStyle = "#8d6418";
+      ctx.fillRect(-10, -4 + (footStep > 0 ? -2 : 0), 6, 4);
+      ctx.fillRect(4, -4 + (footStep < 0 ? -2 : 0), 6, 4);
+    }
     ctx.restore();
   } else if (item.kind === "npc") {
     const spriteKey = item.ref as keyof typeof SPRITES;
@@ -751,105 +920,409 @@ function drawEntity(ctx: CanvasRenderingContext2D, run: Run, item: Ent, theme: T
   } else if (item.kind === "boss") {
     drawBoss(ctx, run, item, theme);
   } else if (item.kind === "spring") {
-    ctx.fillStyle = "#1f8a8a";
-    round(ctx, item.x, item.y, item.w, item.h, 6);
+    // Retro platformer coiled trampoline spring pad
+    ctx.save();
+    ctx.translate(item.x, item.y);
+    const bounce = Math.sin(run.time * 6) * 1.5;
+
+    // Heavy iron base
+    ctx.fillStyle = "#2c221e";
+    round(ctx, 2, item.h - 8, item.w - 4, 8, 3);
     ctx.fill();
-    ctx.fillStyle = "#f6efe2";
-    ctx.fillRect(item.x + 6, item.y + 6, item.w - 12, 4);
+
+    // Coiled metal spring
+    ctx.strokeStyle = "#c4523a";
+    ctx.lineWidth = 3.5;
+    ctx.beginPath();
+    const midX = item.w / 2;
+    ctx.moveTo(midX - 10, item.h - 8);
+    ctx.lineTo(midX + 10, item.h - 13 + bounce);
+    ctx.lineTo(midX - 10, item.h - 18 + bounce);
+    ctx.lineTo(midX + 10, item.h - 22 + bounce * 0.5);
+    ctx.stroke();
+
+    // Top bouncy springboard plate
+    ctx.fillStyle = "#e5b452";
+    round(ctx, 0, 0 + bounce, item.w, 9, 4);
+    ctx.fill();
+    ctx.strokeStyle = "#8b3820";
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.fillStyle = "#8b3820";
+    ctx.fillRect(4, 3 + bounce, item.w - 8, 2);
+    ctx.restore();
   } else if (item.kind === "deco") {
     drawDeco(ctx, item, theme, run.time);
   }
 }
 
 function drawBuilding(ctx: CanvasRenderingContext2D, item: Ent, theme: Theme, time: number) {
-  // Magnificent Institutional Ministry / Tribunal Entrance Portico
+  // Magnificent Institutional Entrance Pavilion (Readable Marquee Sign + Classical Portico)
   ctx.save();
   ctx.translate(item.x, item.y);
 
-  // Building facade block
+  // 1. Classical stone edifice body
   ctx.fillStyle = theme.top;
-  round(ctx, 4, 24, item.w - 8, item.h - 24, 6);
+  round(ctx, 2, 28, item.w - 4, item.h - 28, 8);
   ctx.fill();
   ctx.strokeStyle = theme.ground;
-  ctx.lineWidth = 2;
+  ctx.lineWidth = 2.5;
   ctx.stroke();
 
-  // Neoclassical pediment (frontón) on top
+  // 2. Classical triangular pediment (frontón)
   ctx.fillStyle = theme.accent;
   ctx.beginPath();
   ctx.moveTo(0, 32);
-  ctx.lineTo(item.w / 2, 4);
+  ctx.lineTo(item.w / 2, 2);
   ctx.lineTo(item.w, 32);
   ctx.fill();
-
-  ctx.fillStyle = theme.accentGold;
-  ctx.fillRect(item.w / 2 - 14, 20, 28, 4);
-
-  // Fluted entrance columns
-  ctx.fillStyle = "#fff8ee";
-  ctx.fillRect(10, 36, 10, item.h - 36);
-  ctx.fillRect(item.w - 20, 36, 10, item.h - 36);
-
-  // Dark grand archway entrance with warm inviting light
-  const archW = Math.max(34, item.w - 48);
-  const archX = (item.w - archW) / 2;
-  ctx.fillStyle = "rgba(25, 16, 12, 0.88)";
-  round(ctx, archX, item.h - 48, archW, 48, 16);
-  ctx.fill();
-
-  // Warm interior glow
-  const glow = ctx.createRadialGradient(item.w / 2, item.h - 20, 4, item.w / 2, item.h - 20, 26);
-  glow.addColorStop(0, "rgba(255, 230, 140, 0.95)");
-  glow.addColorStop(0.6, "rgba(240, 175, 70, 0.65)");
-  glow.addColorStop(1, "rgba(240, 175, 70, 0)");
-  ctx.fillStyle = glow;
-  ctx.beginPath();
-  ctx.arc(item.w / 2, item.h - 20, 26, 0, Math.PI * 2);
-  ctx.fill();
-
-  // Glowing title plaque
-  ctx.fillStyle = "rgba(35, 22, 16, 0.88)";
-  round(ctx, 12, 42, item.w - 24, 26, 6);
-  ctx.fill();
   ctx.strokeStyle = theme.accentGold;
-  ctx.lineWidth = 1.5;
+  ctx.lineWidth = 2;
   ctx.stroke();
 
-  ctx.fillStyle = "#fff8ee";
-  ctx.font = "bold 12px Georgia";
-  ctx.textAlign = "center";
-  const words = item.label.split(" ");
-  ctx.fillText(words.slice(0, 2).join(" "), item.w / 2, 59);
-
-  // Floating prompt beacon
-  const bobP = Math.sin(time * 3 + item.id) * 3;
+  // Golden institutional emblem atop the pediment
   ctx.fillStyle = theme.accentGold;
-  round(ctx, item.w / 2 - 32, item.h - 58 + bobP, 64, 18, 9);
+  ctx.beginPath();
+  ctx.arc(item.w / 2, 18, 9, 0, Math.PI * 2);
   ctx.fill();
   ctx.fillStyle = theme.ink;
   ctx.font = "bold 10px Georgia";
-  ctx.fillText("▶ ENTRAR", item.w / 2, item.h - 45 + bobP);
+  ctx.textAlign = "center";
+  ctx.fillText("🏛️", item.w / 2, 22);
+
+  // 3. Fluted marble columns flanking the entrance
+  const colW = 12;
+  ctx.fillStyle = "#fffdf8";
+  ctx.fillRect(8, 36, colW, item.h - 40);
+  ctx.fillRect(item.w - 20, 36, colW, item.h - 40);
+  ctx.fillStyle = "#e0cfbc";
+  ctx.fillRect(6, 32, colW + 4, 5);
+  ctx.fillRect(item.w - 22, 32, colW + 4, 5);
+  ctx.fillRect(6, item.h - 6, colW + 4, 6);
+  ctx.fillRect(item.w - 22, item.h - 6, colW + 4, 6);
+
+  // 4. Arched entrance with deep welcoming ambient light
+  const archW = Math.max(48, item.w - 52);
+  const archX = (item.w - archW) / 2;
+  ctx.fillStyle = "rgba(18, 11, 8, 0.94)";
+  round(ctx, archX, item.h - 52, archW, 52, 18);
+  ctx.fill();
+
+  // Warm interior lantern glow spilling forward
+  const glow = ctx.createRadialGradient(item.w / 2, item.h - 22, 6, item.w / 2, item.h - 22, 34);
+  glow.addColorStop(0, "rgba(255, 235, 150, 0.98)");
+  glow.addColorStop(0.5, "rgba(242, 170, 60, 0.65)");
+  glow.addColorStop(1, "rgba(240, 160, 50, 0)");
+  ctx.fillStyle = glow;
+  ctx.beginPath();
+  ctx.arc(item.w / 2, item.h - 22, 34, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Access steps with crimson carpet runner
+  ctx.fillStyle = "#b23326";
+  round(ctx, archX + 4, item.h - 8, archW - 8, 8, 2);
+  ctx.fill();
+
+  // Brass flanking gas lanterns
+  const lamps = [
+    { x: archX - 5, y: item.h - 44 },
+    { x: archX + archW + 5, y: item.h - 44 },
+  ];
+  for (const l of lamps) {
+    ctx.fillStyle = "#e5b452";
+    ctx.beginPath();
+    ctx.arc(l.x, l.y, 4, 0, Math.PI * 2);
+    ctx.fill();
+    const lGlow = ctx.createRadialGradient(l.x, l.y, 1, l.x, l.y, 12);
+    lGlow.addColorStop(0, "rgba(255, 240, 170, 0.85)");
+    lGlow.addColorStop(1, "rgba(255, 200, 80, 0)");
+    ctx.fillStyle = lGlow;
+    ctx.beginPath();
+    ctx.arc(l.x, l.y, 12, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // 5. HIGH-CONTRAST ILLUMINATED MARQUEE SIGNBOARD
+  const signX = 6;
+  const signY = 36;
+  const signW = item.w - 12;
+  const signH = 44;
+
+  ctx.fillStyle = "rgba(18, 22, 32, 0.96)";
+  round(ctx, signX, signY, signW, signH, 7);
+  ctx.fill();
+  ctx.strokeStyle = "#e5b452";
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Parse label into badge and title
+  const raw = item.label;
+  let badge = "";
+  let title = raw;
+  if (raw.includes(":")) {
+    const parts = raw.split(":");
+    badge = parts[0].trim();
+    title = parts.slice(1).join(":").trim();
+  } else if (raw.startsWith("Bloque") || raw.startsWith("Tema") || raw.startsWith("Jefe") || raw.startsWith("Examen")) {
+    const parts = raw.split(" ");
+    badge = parts.slice(0, 2).join(" ");
+    title = parts.slice(2).join(" ");
+  }
+
+  // Draw Badge (Gold on dark)
+  if (badge) {
+    ctx.fillStyle = "#e5b452";
+    ctx.font = "bold 10px Georgia";
+    ctx.textAlign = "center";
+    ctx.fillText(badge, item.w / 2, signY + 14);
+  }
+
+  // Draw Title text (Crisp white with shadow, multi-line aware)
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "bold 11px Georgia";
+  ctx.textAlign = "center";
+  ctx.shadowColor = "rgba(0,0,0,0.9)";
+  ctx.shadowBlur = 3;
+
+  const words = (title || raw).split(" ");
+  if (words.length <= 2) {
+    ctx.fillText(title || raw, item.w / 2, badge ? signY + 32 : signY + 26);
+  } else {
+    // 2-line split
+    const mid = Math.ceil(words.length / 2);
+    const line1 = words.slice(0, mid).join(" ");
+    const line2 = words.slice(mid).join(" ");
+    ctx.fillText(line1, item.w / 2, badge ? signY + 25 : signY + 18);
+    ctx.fillText(line2, item.w / 2, badge ? signY + 37 : signY + 32);
+  }
+  ctx.shadowBlur = 0;
+
+  // 6. Floating animated interaction beacon
+  const bobP = Math.sin(time * 3.5 + item.id) * 3;
+  ctx.fillStyle = "#e5b452";
+  round(ctx, item.w / 2 - 34, item.h - 58 + bobP, 68, 18, 9);
+  ctx.fill();
+  ctx.strokeStyle = "#ffffff";
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  ctx.fillStyle = "#1e140d";
+  ctx.font = "bold 10px Georgia";
+  ctx.fillText("▼ [E] ENTRAR", item.w / 2, item.h - 45 + bobP);
 
   ctx.restore();
 }
 
 function drawBoss(ctx: CanvasRenderingContext2D, run: Run, item: Ent, theme: Theme) {
+  // Legendary Retro Boss Fight: "El Gran Magistrado del Tribunal" (Mario / Alex Kidd Boss Style)
   ctx.save();
-  ctx.translate(item.x, item.y + Math.sin(run.time * 2) * 3);
-  ctx.fillStyle = theme.hill2;
-  round(ctx, 8, 20, 62, 70, 16);
-  ctx.fill();
-  ctx.fillStyle = theme.accent;
+  const time = run.time;
+  const hoverY = Math.sin(time * 2.8) * 6;
+  const isHurt = run.shake > 0;
+  const facing = item.vx >= 0 ? 1 : -1;
+
+  ctx.translate(item.x + item.w / 2, item.y + item.h + hoverY);
+
+  // 1. Magical Tribunal Aura (Pulsing glowing halo)
+  const aura = ctx.createRadialGradient(0, -50, 10, 0, -50, 75);
+  const hpRatio = Math.max(0, run.bossHp / run.bossMax);
+  const auraAlpha = 0.35 + Math.sin(time * 4) * 0.15;
+  aura.addColorStop(0, `rgba(226, 182, 87, ${auraAlpha})`);
+  aura.addColorStop(0.6, `rgba(178, 58, 72, ${auraAlpha * 0.5})`);
+  aura.addColorStop(1, "rgba(178, 58, 72, 0)");
+  ctx.fillStyle = aura;
   ctx.beginPath();
-  ctx.arc(39, 24, 22, 0, Math.PI * 2);
+  ctx.arc(0, -50, 75, 0, Math.PI * 2);
   ctx.fill();
-  ctx.fillStyle = "#1b1420";
-  ctx.fillRect(28, 20, 6, 6);
-  ctx.fillRect(44, 20, 6, 6);
-  ctx.fillStyle = "#f6efe2";
-  ctx.font = "bold 12px Georgia";
+
+  // Shadow on the ground below hover
+  ctx.fillStyle = "rgba(25, 14, 10, 0.35)";
+  ctx.beginPath();
+  ctx.ellipse(0, 3 - hoverY, 34, 8, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Boss body scale & damage flash
+  ctx.scale(facing, 1);
+  if (isHurt && Math.sin(time * 30) > 0) {
+    ctx.globalAlpha = 0.6;
+  }
+
+  // 2. Velvet Magistrate Robes (Body)
+  // Deep imperial purple / judicial maroon robe
+  ctx.fillStyle = isHurt ? "#d94236" : "#4a1c38";
+  round(ctx, -28, -78, 56, 78, 16);
+  ctx.fill();
+  ctx.strokeStyle = "#e5b452";
+  ctx.lineWidth = 2.5;
+  ctx.stroke();
+
+  // Gold frogging and trim down the center
+  ctx.fillStyle = "#e5b452";
+  ctx.fillRect(-3, -78, 6, 76);
+  for (let b = -70; b < -10; b += 14) {
+    ctx.fillRect(-12, b, 24, 3);
+  }
+
+  // White ermine / lace judicial jabot (chabó de encaje)
+  ctx.fillStyle = "#fffaf2";
+  ctx.beginPath();
+  ctx.moveTo(0, -68);
+  ctx.lineTo(10, -52);
+  ctx.lineTo(-10, -52);
+  ctx.closePath();
+  ctx.fill();
+
+  // 3. Head & Classic Judicial Wig (Peluca con bucles de magistrado)
+  // Face
+  ctx.fillStyle = isHurt ? "#fcd8d4" : "#f5d4be";
+  ctx.beginPath();
+  ctx.arc(0, -78, 16, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Curly powdered wig (bucles laterales)
+  ctx.fillStyle = "#e8e5df";
+  ctx.beginPath();
+  // Left curls
+  ctx.arc(-16, -82, 8, 0, Math.PI * 2);
+  ctx.arc(-18, -72, 7, 0, Math.PI * 2);
+  ctx.arc(-16, -63, 6, 0, Math.PI * 2);
+  // Right curls
+  ctx.arc(16, -82, 8, 0, Math.PI * 2);
+  ctx.arc(18, -72, 7, 0, Math.PI * 2);
+  ctx.arc(16, -63, 6, 0, Math.PI * 2);
+  // Top wig volume
+  ctx.arc(0, -90, 14, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = "#b5b0a6";
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // Judicial Bicorne / Crown
+  ctx.fillStyle = "#22131e";
+  ctx.beginPath();
+  ctx.moveTo(-20, -88);
+  ctx.lineTo(0, -104);
+  ctx.lineTo(20, -88);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = "#e5b452";
+  ctx.fillRect(-8, -94, 16, 4);
+
+  // Stern animated face: glowing eyes tracking player
+  ctx.fillStyle = "#ffdd44";
+  ctx.beginPath();
+  ctx.ellipse(-5, -78, 4, 3, 0, 0, Math.PI * 2);
+  ctx.ellipse(7, -78, 4, 3, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = "#1a0e14";
+  ctx.beginPath();
+  ctx.arc(-4, -78, 1.8, 0, Math.PI * 2);
+  ctx.arc(8, -78, 1.8, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Fierce bushy eyebrows
+  ctx.strokeStyle = "#402636";
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.moveTo(-10, -83);
+  ctx.lineTo(-2, -80);
+  ctx.moveTo(11, -83);
+  ctx.lineTo(3, -80);
+  ctx.stroke();
+
+  // 4. WEAPON 1: GIANT GOLDEN GAVEL (Maza de Tribunal) in Left Hand
+  ctx.save();
+  const gavelAngle = Math.sin(time * 5) * 0.35;
+  ctx.translate(-26, -50);
+  ctx.rotate(gavelAngle);
+  // Handle
+  ctx.fillStyle = "#8d542c";
+  ctx.fillRect(-3, -26, 6, 32);
+  // Gavel Head
+  ctx.fillStyle = "#e5b452";
+  round(ctx, -14, -38, 22, 14, 3);
+  ctx.fill();
+  ctx.strokeStyle = "#a47820";
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+  ctx.restore();
+
+  // 5. WEAPON 2: GLOWING RED EXAM PEN (Pluma de Calificación) in Right Hand
+  ctx.save();
+  ctx.translate(26, -50);
+  ctx.rotate(-0.3 + Math.sin(time * 4) * 0.2);
+  // Quill feather in crimson
+  ctx.fillStyle = "#c43328";
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.quadraticCurveTo(12, -20, 4, -36);
+  ctx.quadraticCurveTo(-2, -18, 0, 0);
+  ctx.fill();
+  // Glowing nib spark
+  ctx.fillStyle = "#ffffff";
+  ctx.beginPath();
+  ctx.arc(4, -36, 3.5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+
+  ctx.restore(); // Restore boss body transformation
+
+  // 6. RETRO ARCADE BOSS HEALTH BAR & NAMEPLATE (HUD style above boss)
+  ctx.save();
+  const barW = 140;
+  const barH = 16;
+  const barX = item.x + item.w / 2 - barW / 2;
+  const barY = item.y - 44 + hoverY;
+
+  // Boss Title
+  ctx.fillStyle = "#fff8ee";
+  ctx.font = "bold 11px Georgia";
   ctx.textAlign = "center";
-  ctx.fillText(`${run.bossHp}/${run.bossMax}`, 39, 8);
+  ctx.shadowColor = "rgba(0,0,0,0.85)";
+  ctx.shadowBlur = 4;
+  ctx.fillText(`👑 ${item.label.toUpperCase()}`, item.x + item.w / 2, barY - 4);
+  ctx.shadowBlur = 0;
+
+  // Outer metal frame
+  ctx.fillStyle = "rgba(18, 12, 16, 0.94)";
+  round(ctx, barX, barY, barW, barH, 4);
+  ctx.fill();
+  ctx.strokeStyle = "#e5b452";
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Segmented life pips (Retro Street Fighter / Mega Man style)
+  const pips = run.bossMax;
+  const pipGap = 2;
+  const pipW = (barW - 8 - (pips - 1) * pipGap) / pips;
+  for (let i = 0; i < pips; i++) {
+    const active = i < run.bossHp;
+    const px = barX + 4 + i * (pipW + pipGap);
+    if (active) {
+      // Glowing green/yellow/red gradient depending on HP
+      ctx.fillStyle = hpRatio > 0.5 ? "#56bf5e" : hpRatio > 0.25 ? "#f0b429" : "#e53e3e";
+      round(ctx, px, barY + 3, pipW, barH - 6, 2);
+      ctx.fill();
+      // Highlight shine
+      ctx.fillStyle = "rgba(255,255,255,0.45)";
+      ctx.fillRect(px, barY + 3, pipW, 3);
+    } else {
+      ctx.fillStyle = "rgba(255,255,255,0.1)";
+      round(ctx, px, barY + 3, pipW, barH - 6, 2);
+      ctx.fill();
+    }
+  }
+
+  // Stomp Hint Badge
+  ctx.fillStyle = "#e5b452";
+  round(ctx, item.x + item.w / 2 - 44, barY + barH + 3, 88, 14, 7);
+  ctx.fill();
+  ctx.fillStyle = "#1e140d";
+  ctx.font = "bold 9px Georgia";
+  ctx.textAlign = "center";
+  ctx.fillText("⭐ PÍSALE LA CABEZA", item.x + item.w / 2, barY + barH + 13);
+
   ctx.restore();
 }
 
