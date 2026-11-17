@@ -733,7 +733,10 @@ export function step(run: Run, dt: number, input: Input) {
       else win(run);
       return;
     }
-    if (input.actionPressed || headHit) {
+    // Auto-trigger dialogue when passing by an NPC - no need to press Enter!
+    const autoPassNpc = item.kind === "npc" && !run.talked && near.dist < 46;
+
+    if (input.actionPressed || headHit || autoPassNpc) {
       if (item.kind === "npc" && run.topicId) openPending(run, { type: "dialogue", npcId: item.ref, topicId: run.topicId });
       else if (item.kind === "npc") openPending(run, { type: "dialogue", npcId: item.ref, topicId: "" });
       else if (item.kind === "panel") openPending(run, { type: "panel", id: item.ref as "codex" });

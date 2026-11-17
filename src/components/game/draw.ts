@@ -167,7 +167,9 @@ export function drawRun(ctx: CanvasRenderingContext2D, run: Run, width: number, 
   const worldW = run.W * T;
   let camX = run.player.x - viewW * 0.38;
   camX = Math.max(0, Math.min(worldW - viewW, camX));
-  const camY = Math.max(0, run.H * T - viewH - 8);
+  // Reduce ground height to a slim 58px sidewalk so 88% of screen is background and architecture
+  const groundY = 11 * T;
+  const camY = Math.max(0, groundY - viewH + 58);
   const shake = run.shake > 0 ? Math.sin(run.time * 50) * 4 : 0;
 
   // Sky base gradient
@@ -248,10 +250,11 @@ function drawBackdrop(
   viewH: number,
   camY: number,
 ) {
-  // Photorealistic 3D Pixar Madrid Skyline with Parallax
-  const bgImg = getImage(BG_IMAGES.madrid);
+  // Photorealistic 3D Pixar Backdrop matching each world's unique block theme
+  const bgPath = BG_IMAGES[run.theme] ?? BG_IMAGES.madrid;
+  const bgImg = getImage(bgPath) ?? getImage(BG_IMAGES.madrid);
   if (bgImg) {
-    const bgH = viewH + 30;
+    const bgH = viewH + 20;
     const bgW = (bgH / bgImg.height) * bgImg.width;
     const offset = ((-camX * 0.22) % bgW) - bgW;
     const startX = camX + offset;
@@ -913,7 +916,7 @@ function drawEntity(ctx: CanvasRenderingContext2D, run: Run, item: Ent, theme: T
 
     // Callout bubble when not yet spoken to
     if (!run.talked && run.mode === "stage") {
-      bubble(ctx, item.x - 2, item.y - 20, "💬 [E] Hablar");
+      bubble(ctx, item.x - 2, item.y - 20, "💬 ¡Pasa para hablar!");
     }
   } else if (item.kind === "flag") {
     // Official Tribunal Finish Flag
@@ -986,99 +989,186 @@ function drawEntity(ctx: CanvasRenderingContext2D, run: Run, item: Ent, theme: T
 }
 
 function drawBuilding(ctx: CanvasRenderingContext2D, item: Ent, theme: Theme, time: number) {
-  // Magnificent Institutional Entrance Pavilion (Readable Marquee Sign + Classical Portico)
+  // Super Mario World style Royal Palace Castle & Ministerial Fortresses
   ctx.save();
   ctx.translate(item.x, item.y);
 
-  // 1. Classical stone edifice body
-  ctx.fillStyle = theme.top;
-  round(ctx, 2, 28, item.w - 4, item.h - 28, 8);
-  ctx.fill();
-  ctx.strokeStyle = theme.ground;
-  ctx.lineWidth = 2.5;
-  ctx.stroke();
+  const w = item.w;
+  const h = item.h;
+  const isFinal = item.ref === "exam-hall" || item.ref.includes("final") || item.ref.includes("boss");
 
-  // 2. Classical triangular pediment (frontón)
-  ctx.fillStyle = theme.accent;
-  ctx.beginPath();
-  ctx.moveTo(0, 32);
-  ctx.lineTo(item.w / 2, 2);
-  ctx.lineTo(item.w, 32);
+  // 1. CASTLE TOWERS (Twin Bastion Towers flanking left and right)
+  const towerW = 28;
+  const towerH = h + 18;
+  const towerY = -18;
+
+  // Left Tower Stone Body
+  ctx.fillStyle = theme.top;
+  round(ctx, 0, towerY + 12, towerW, towerH - 12, 4);
   ctx.fill();
-  ctx.strokeStyle = theme.accentGold;
+  ctx.strokeStyle = theme.groundShadow;
   ctx.lineWidth = 2;
   ctx.stroke();
 
-  // Golden institutional emblem atop the pediment
-  ctx.fillStyle = theme.accentGold;
+  // Right Tower Stone Body
+  round(ctx, w - towerW, towerY + 12, towerW, towerH - 12, 4);
+  ctx.fill();
+  ctx.stroke();
+
+  // Tower Crenellations / Battlements (Almenas de Castillo de Mario)
+  ctx.fillStyle = theme.accent;
+  // Left Tower Almenas
+  ctx.fillRect(0, towerY, 8, 12);
+  ctx.fillRect(10, towerY + 4, 8, 8);
+  ctx.fillRect(20, towerY, 8, 12);
+  // Right Tower Almenas
+  ctx.fillRect(w - towerW, towerY, 8, 12);
+  ctx.fillRect(w - towerW + 10, towerY + 4, 8, 8);
+  ctx.fillRect(w - 8, towerY, 8, 12);
+
+  // Waving Heraldic Pennants atop Golden Flagpoles on both towers
+  const waveFlag = Math.sin(time * 5) * 3;
+  // Left Flagpole & Pennant
+  ctx.fillStyle = "#e5b452";
+  ctx.fillRect(13, towerY - 24, 2.5, 24);
   ctx.beginPath();
-  ctx.arc(item.w / 2, 18, 9, 0, Math.PI * 2);
+  ctx.arc(14.25, towerY - 24, 3, 0, Math.PI * 2);
   ctx.fill();
-  ctx.fillStyle = theme.ink;
-  ctx.font = "bold 10px Georgia";
+
+  ctx.fillStyle = isFinal ? "#c43328" : theme.accent;
+  ctx.beginPath();
+  ctx.moveTo(15.5, towerY - 24);
+  ctx.lineTo(34, towerY - 18 + waveFlag);
+  ctx.lineTo(15.5, towerY - 12);
+  ctx.fill();
+
+  // Right Flagpole & Pennant
+  ctx.fillStyle = "#e5b452";
+  ctx.fillRect(w - 15.5, towerY - 24, 2.5, 24);
+  ctx.beginPath();
+  ctx.arc(w - 14.25, towerY - 24, 3, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = isFinal ? "#c43328" : theme.accent;
+  ctx.beginPath();
+  ctx.moveTo(w - 13, towerY - 24);
+  ctx.lineTo(w + 6, towerY - 18 + waveFlag);
+  ctx.lineTo(w - 13, towerY - 12);
+  ctx.fill();
+
+  // 2. CENTRAL PALACE / CASTLE KEEP (Gran Cuerpo Central)
+  const mainX = towerW - 4;
+  const mainW = w - (towerW - 4) * 2;
+  const mainH = h;
+  ctx.fillStyle = theme.top;
+  round(ctx, mainX, 16, mainW, mainH - 16, 4);
+  ctx.fill();
+  ctx.strokeStyle = theme.groundShadow;
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Central Castle Crenellations / Balustrade
+  ctx.fillStyle = theme.accent;
+  ctx.fillRect(mainX - 2, 8, mainW + 4, 8);
+  for (let ax = mainX + 4; ax < mainX + mainW - 8; ax += 12) {
+    ctx.fillRect(ax, 2, 7, 8);
+  }
+
+  // Golden Royal Crown or Palace Pediment Crest
+  ctx.fillStyle = "#e5b452";
+  ctx.beginPath();
+  ctx.arc(w / 2, 4, 9, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = "#8d542c";
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+  ctx.fillStyle = "#1e140d";
+  ctx.font = "bold 9px Georgia";
   ctx.textAlign = "center";
-  ctx.fillText("🏛️", item.w / 2, 22);
+  ctx.fillText(isFinal ? "👑" : "🏰", w / 2, 7.5);
 
-  // 3. Fluted marble columns flanking the entrance
-  const colW = 12;
-  ctx.fillStyle = "#fffdf8";
-  ctx.fillRect(8, 36, colW, item.h - 40);
-  ctx.fillRect(item.w - 20, 36, colW, item.h - 40);
-  ctx.fillStyle = "#e0cfbc";
-  ctx.fillRect(6, 32, colW + 4, 5);
-  ctx.fillRect(item.w - 22, 32, colW + 4, 5);
-  ctx.fillRect(6, item.h - 6, colW + 4, 6);
-  ctx.fillRect(item.w - 22, item.h - 6, colW + 4, 6);
+  // 3. GRAND ARCADED GATEWAY (El Gran Portón Arqueado)
+  const gateW = 44;
+  const gateH = 58;
+  const gateX = (w - gateW) / 2;
+  const gateY = h - gateH;
 
-  // 4. Arched entrance with deep welcoming ambient light
-  const archW = Math.max(48, item.w - 52);
-  const archX = (item.w - archW) / 2;
-  ctx.fillStyle = "rgba(18, 11, 8, 0.94)";
-  round(ctx, archX, item.h - 52, archW, 52, 18);
+  // Outer Stone Arch Moulding (Dovelas de piedra labrada)
+  ctx.fillStyle = theme.ground;
+  round(ctx, gateX - 4, gateY - 4, gateW + 8, gateH + 4, 20);
   ctx.fill();
 
-  // Warm interior lantern glow spilling forward
-  const glow = ctx.createRadialGradient(item.w / 2, item.h - 22, 6, item.w / 2, item.h - 22, 34);
-  glow.addColorStop(0, "rgba(255, 235, 150, 0.98)");
-  glow.addColorStop(0.5, "rgba(242, 170, 60, 0.65)");
-  glow.addColorStop(1, "rgba(240, 160, 50, 0)");
+  // Inner Dark Gateway Abyss
+  ctx.fillStyle = "#120e18";
+  round(ctx, gateX, gateY, gateW, gateH, 18);
+  ctx.fill();
+
+  // Portcullis Iron Grate (Rastrillo de hierro levantado de Mario)
+  ctx.strokeStyle = "rgba(220, 195, 150, 0.45)";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  for (let px = gateX + 8; px < gateX + gateW - 4; px += 8) {
+    ctx.moveTo(px, gateY);
+    ctx.lineTo(px, gateY + 22);
+  }
+  ctx.moveTo(gateX + 4, gateY + 12);
+  ctx.lineTo(gateX + gateW - 4, gateY + 12);
+  ctx.moveTo(gateX + 4, gateY + 20);
+  ctx.lineTo(gateX + gateW - 4, gateY + 20);
+  ctx.stroke();
+
+  // Warm golden inviting light spilling from the doorway
+  const glow = ctx.createRadialGradient(w / 2, h - 16, 4, w / 2, h - 16, 32);
+  glow.addColorStop(0, "rgba(255, 235, 140, 0.95)");
+  glow.addColorStop(0.5, "rgba(240, 160, 50, 0.55)");
+  glow.addColorStop(1, "rgba(240, 140, 40, 0)");
   ctx.fillStyle = glow;
   ctx.beginPath();
-  ctx.arc(item.w / 2, item.h - 22, 34, 0, Math.PI * 2);
+  ctx.arc(w / 2, h - 16, 32, 0, Math.PI * 2);
   ctx.fill();
 
-  // Access steps with crimson carpet runner
-  ctx.fillStyle = "#b23326";
-  round(ctx, archX + 4, item.h - 8, archW - 8, 8, 2);
+  // Royal Ceremonial Red Carpet rolling out through the gate
+  ctx.fillStyle = "#b22e23";
+  ctx.beginPath();
+  ctx.moveTo(gateX + 8, h - 14);
+  ctx.lineTo(gateX + gateW - 8, h - 14);
+  ctx.lineTo(gateX + gateW - 4, h);
+  ctx.lineTo(gateX + 4, h);
+  ctx.closePath();
   ctx.fill();
+  // Gold carpet trim
+  ctx.fillStyle = "#e5b452";
+  ctx.fillRect(gateX + 4, h - 1, gateW - 8, 2);
 
-  // Brass flanking gas lanterns
-  const lamps = [
-    { x: archX - 5, y: item.h - 44 },
-    { x: archX + archW + 5, y: item.h - 44 },
-  ];
-  for (const l of lamps) {
-    ctx.fillStyle = "#e5b452";
+  // 4. ANIMATED CASTLE WALL TORCHES / BRAZIERS
+  const torches = [gateX - 8, gateX + gateW + 8];
+  for (const tx of torches) {
+    // Sconce iron bracket
+    ctx.fillStyle = "#2c221e";
+    ctx.fillRect(tx - 2, h - 42, 4, 14);
+    // Torch cup
+    ctx.fillStyle = "#8d542c";
+    ctx.fillRect(tx - 4, h - 46, 8, 5);
+    // Animated dancing fire flame
+    const flicker = Math.sin(time * 12 + tx) * 1.5;
+    const flame = ctx.createRadialGradient(tx, h - 49 + flicker, 1, tx, h - 49 + flicker, 10);
+    flame.addColorStop(0, "rgba(255, 255, 200, 0.95)");
+    flame.addColorStop(0.4, "rgba(255, 160, 40, 0.75)");
+    flame.addColorStop(1, "rgba(255, 80, 20, 0)");
+    ctx.fillStyle = flame;
     ctx.beginPath();
-    ctx.arc(l.x, l.y, 4, 0, Math.PI * 2);
-    ctx.fill();
-    const lGlow = ctx.createRadialGradient(l.x, l.y, 1, l.x, l.y, 12);
-    lGlow.addColorStop(0, "rgba(255, 240, 170, 0.85)");
-    lGlow.addColorStop(1, "rgba(255, 200, 80, 0)");
-    ctx.fillStyle = lGlow;
-    ctx.beginPath();
-    ctx.arc(l.x, l.y, 12, 0, Math.PI * 2);
+    ctx.arc(tx, h - 49 + flicker, 10, 0, Math.PI * 2);
     ctx.fill();
   }
 
-  // 5. HIGH-CONTRAST ILLUMINATED MARQUEE SIGNBOARD
-  const signX = 6;
-  const signY = 36;
-  const signW = item.w - 12;
-  const signH = 44;
+  // 5. HIGH-CONTRAST ILLUMINATED ARCADE MARQUEE SIGNBOARD
+  const signX = 8;
+  const signY = 28;
+  const signW = w - 16;
+  const signH = 40;
 
-  ctx.fillStyle = "rgba(18, 22, 32, 0.96)";
-  round(ctx, signX, signY, signW, signH, 7);
+  ctx.fillStyle = "rgba(18, 22, 34, 0.96)";
+  round(ctx, signX, signY, signW, signH, 6);
   ctx.fill();
   ctx.strokeStyle = "#e5b452";
   ctx.lineWidth = 2;
@@ -1101,43 +1191,39 @@ function drawBuilding(ctx: CanvasRenderingContext2D, item: Ent, theme: Theme, ti
   // Draw Badge (Gold on dark)
   if (badge) {
     ctx.fillStyle = "#e5b452";
-    ctx.font = "bold 10px Georgia";
+    ctx.font = "bold 9px Georgia";
     ctx.textAlign = "center";
-    ctx.fillText(badge, item.w / 2, signY + 14);
+    ctx.fillText(badge, w / 2, signY + 12);
   }
 
-  // Draw Title text (Crisp white with shadow, multi-line aware)
+  // Draw Title text (Crisp white with shadow)
   ctx.fillStyle = "#ffffff";
-  ctx.font = "bold 11px Georgia";
+  ctx.font = "bold 10.5px Georgia";
   ctx.textAlign = "center";
   ctx.shadowColor = "rgba(0,0,0,0.9)";
   ctx.shadowBlur = 3;
 
   const words = (title || raw).split(" ");
   if (words.length <= 2) {
-    ctx.fillText(title || raw, item.w / 2, badge ? signY + 32 : signY + 26);
+    ctx.fillText(title || raw, w / 2, badge ? signY + 28 : signY + 24);
   } else {
-    // 2-line split
     const mid = Math.ceil(words.length / 2);
     const line1 = words.slice(0, mid).join(" ");
     const line2 = words.slice(mid).join(" ");
-    ctx.fillText(line1, item.w / 2, badge ? signY + 25 : signY + 18);
-    ctx.fillText(line2, item.w / 2, badge ? signY + 37 : signY + 32);
+    ctx.fillText(line1, w / 2, badge ? signY + 22 : signY + 16);
+    ctx.fillText(line2, w / 2, badge ? signY + 34 : signY + 28);
   }
   ctx.shadowBlur = 0;
 
   // 6. Floating animated interaction beacon
-  const bobP = Math.sin(time * 3.5 + item.id) * 3;
+  const beaconBob = Math.sin(time * 3.5 + item.id) * 3;
   ctx.fillStyle = "#e5b452";
-  round(ctx, item.w / 2 - 34, item.h - 58 + bobP, 68, 18, 9);
+  round(ctx, w / 2 - 28, signY + signH + 4 + beaconBob, 56, 15, 7);
   ctx.fill();
-  ctx.strokeStyle = "#ffffff";
-  ctx.lineWidth = 1;
-  ctx.stroke();
-
   ctx.fillStyle = "#1e140d";
-  ctx.font = "bold 10px Georgia";
-  ctx.fillText("▼ [E] ENTRAR", item.w / 2, item.h - 45 + bobP);
+  ctx.font = "bold 9px Georgia";
+  ctx.textAlign = "center";
+  ctx.fillText("▶ ENTRAR", w / 2, signY + signH + 15 + beaconBob);
 
   ctx.restore();
 }

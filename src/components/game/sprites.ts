@@ -134,8 +134,16 @@ export function getImage(src: string): HTMLImageElement | null {
   return null;
 }
 
-export const BG_IMAGES = {
+export const BG_IMAGES: Record<string, string> = {
   madrid: "/backgrounds/madrid-bg.jpg",
+  plaza: "/backgrounds/madrid-bg.jpg",
+  carta: "/backgrounds/madrid-bg.jpg",
+  europa: "/backgrounds/europa-bg.jpg",
+  jardin: "/backgrounds/jardin-bg.jpg",
+  sello: "/backgrounds/sello-bg.jpg",
+  campus: "/backgrounds/madrid-bg.jpg",
+  hacienda: "/backgrounds/hacienda-bg.jpg",
+  examen: "/backgrounds/examen-bg.jpg",
   stone: "/backgrounds/granite-stone.jpg",
 };
 
