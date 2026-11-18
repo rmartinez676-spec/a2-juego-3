@@ -1,8 +1,35 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect width="64" height="64" rx="14" fill="#1b2430"/>
-  <circle cx="32" cy="24" r="10" fill="#d4654a"/>
-  <rect x="20" y="34" width="24" height="16" rx="6" fill="#1f8a8a"/>
-  <rect x="18" y="36" width="28" height="12" rx="6" fill="#8d8f93"/>
-  <circle cx="28" cy="24" r="2" fill="#241812"/>
-  <circle cx="36" cy="24" r="2" fill="#241812"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#192943" />
+      <stop offset="100%" stop-color="#050e26" />
+    </linearGradient>
+    <linearGradient id="shieldGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#fff199" />
+      <stop offset="50%" stop-color="#dfb738" />
+      <stop offset="100%" stop-color="#996c08" />
+    </linearGradient>
+  </defs>
+  <rect width="128" height="128" rx="28" fill="url(#bg)" />
+  <rect x="5" y="5" width="118" height="118" rx="24" fill="none" stroke="#d4af37" stroke-width="2" stroke-opacity="0.45" />
+  
+  <!-- Pixel Golden Star on top -->
+  <path d="M62 14 h4 v4 h-4 z m-4 4 h12 v4 h-12 z m-8 4 h28 v4 h-28 z m4 4 h20 v4 h-20 z m-4 4 h8 v4 h-8 z m16 0 h8 v4 h-8 z" fill="#ffe066" />
+  
+  <!-- Golden Laurels Left -->
+  <path d="M26 44 C22 56 24 72 36 86 C28 72 27 58 32 46 Z" fill="#dfb738" />
+  <path d="M20 54 C23 60 27 64 32 66 C26 62 23 58 20 54 Z" fill="#ffd147" />
+  <path d="M22 68 C27 74 33 78 39 80 C32 76 27 72 22 68 Z" fill="#ffd147" />
+
+  <!-- Golden Laurels Right -->
+  <path d="M102 44 C106 56 104 72 92 86 C100 72 101 58 96 46 Z" fill="#dfb738" />
+  <path d="M108 54 C105 60 101 64 96 66 C102 62 105 58 108 54 Z" fill="#ffd147" />
+  <path d="M106 68 C101 74 95 78 89 80 C96 76 101 72 106 68 Z" fill="#ffd147" />
+
+  <!-- Golden Shield -->
+  <path d="M42 34 h44 c0 0 1 36 -22 56 C41 70 42 34 42 34 Z" fill="url(#shieldGrad)" stroke="#593c02" stroke-width="2.5" />
+  <path d="M64 34 v54 C46 72 45 36 45 36 h19 Z" fill="#ffffff" opacity="0.22" />
+
+  <!-- A2 Emblem Typography -->
+  <text x="64" y="68" text-anchor="middle" font-family="'Nunito', 'Segoe UI', system-ui, sans-serif" font-weight="900" font-size="27" fill="#0d1726" stroke="#ffe272" stroke-width="0.8" letter-spacing="-1">A2</text>
 </svg>

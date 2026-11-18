@@ -20,6 +20,23 @@ const nunito = Nunito({
 export const metadata: Metadata = {
   title: "OPOS · Repaso Oficial 58 Temas y Casos Prácticos · Gestión A2 AGE",
   description: "Videojuego de plataformas de repaso para la oposición de Gestión de la Administración Civil del Estado (GACE A2) con test y casos prácticos.",
+  applicationName: "OpoJuego A2",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "OpoJuego A2",
+  },
+  icons: {
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [
+      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+    ],
+  },
+  manifest: "/manifest.webmanifest",
 };
 
 export const viewport: Viewport = {
