@@ -114,6 +114,7 @@ export default function GameApp() {
   const [customQ, setCustomQ] = useState({ prompt: "", options: ["", "", "", ""], correctIndex: 0, explanation: "" });
   const [titlePose, setTitlePose] = useState<"study" | "cheer">("study");
   const [showControls, setShowControls] = useState(false);
+  const [showPauseHelp, setShowPauseHelp] = useState(false);
   const [promptText, setPromptText] = useState("");
   const promptRef = useRef("");
 
@@ -209,7 +210,7 @@ export default function GameApp() {
         inputRef.current.actionPressed = true;
       }
       if (event.code === "KeyM" && down && !event.repeat) toggleMute();
-      if (event.code === "Escape" && down) setPaused((value) => !value);
+      if ((event.code === "Escape" || event.code === "KeyP") && down && !event.repeat) setPaused((value) => !value);
     };
     window.addEventListener("keydown", onKey);
     window.addEventListener("keyup", onKey);
@@ -716,6 +717,15 @@ export default function GameApp() {
               <span><strong>Saltar:</strong> ESPACIO o W o ⬆️</span>
               <span><strong>Hablar / Entrar:</strong> E o ENTER o Botón</span>
             </div>
+            <button
+              type="button"
+              className="canvas-pause-btn"
+              onClick={() => setPaused((v) => !v)}
+              title="Pausa (ESC o P)"
+              aria-label="Pausa"
+            >
+              ⏸️
+            </button>
             <canvas
               ref={canvasRef}
               onTouchStart={handleCanvasTouch}
@@ -819,11 +829,104 @@ export default function GameApp() {
                 </section>
               </div>
             )}
-            {(paused || failed || result) && (
+            {/* MODAL DE PAUSA DEDICADO */}
+            {paused && !result && !failed && (
+              <div className="overlay pause-overlay">
+                <section className="pause-modal-card stack">
+                  <div className="pause-modal-header">
+                    <span className="pause-pill">⏸️ JUEGO EN PAUSA</span>
+                    <h2>{runRef.current?.title || "Partida en Pausa"}</h2>
+                    <p className="pause-subtitle">{runRef.current?.subtitle || "Oposición A2 AGE"}</p>
+                  </div>
+
+                  {(() => {
+                    const currentTopic = TOPICS.find((t) => t.id === runRef.current?.topicId);
+                    const world = WORLDS.find((w) => w.id === runRef.current?.worldId);
+                    const currentLevel = runRef.current?.levelId ?? "";
+
+                    return (
+                      <div className="pause-modal-body stack">
+                        {currentTopic && (
+                          <div className="pause-statutory-tip">
+                            <p><strong>Normativa clave:</strong> {currentTopic.laws.map((l) => l.name).join(", ")}</p>
+                            <p className="fine">💡 <em>{currentTopic.trap}</em></p>
+                          </div>
+                        )}
+
+                        <div className="pause-menu-actions">
+                          {/* 1. Continuar */}
+                          <button
+                            type="button"
+                            className="primary pause-btn-resume"
+                            onClick={() => setPaused(false)}
+                          >
+                            ▶️ Continuar jugando
+                          </button>
+
+                          {/* 2. Reiniciar este submundo */}
+                          {currentLevel && (
+                            <button
+                              type="button"
+                              className="ghost pause-btn-action"
+                              onClick={() => {
+                                setPaused(false);
+                                enter(currentLevel);
+                              }}
+                            >
+                              🔄 Reiniciar este tema (preguntas nuevas)
+                            </button>
+                          )}
+
+                          {/* 3. Volver al mapa del bloque */}
+                          {world && world.id !== "hub" && (
+                            <button
+                              type="button"
+                              className="ghost pause-btn-action"
+                              onClick={() => {
+                                setPaused(false);
+                                launch(startMap(world.id, difficulty));
+                              }}
+                            >
+                              🗺️ Volver al Mapa de {world.name}
+                            </button>
+                          )}
+
+                          {/* 4. Volver a la Plaza General */}
+                          <button
+                            type="button"
+                            className="ghost pause-btn-action"
+                            onClick={() => {
+                              setPaused(false);
+                              launch(startHub(difficulty));
+                            }}
+                          >
+                            🏛️ Volver a la Plaza General
+                          </button>
+                        </div>
+
+                        <div className="pause-help-toggle-box">
+                          <button
+                            type="button"
+                            className="ghost fine toggle-help-btn"
+                            onClick={() => setShowPauseHelp((v) => !v)}
+                          >
+                            {showPauseHelp ? "▲ Ocultar guía de controles" : "▼ Ver controles y ayuda"}
+                          </button>
+                          {showPauseHelp && <Help />}
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </section>
+              </div>
+            )}
+
+            {/* MODAL DE RESULTADO / FIN DE NIVEL */}
+            {(failed || result) && (
               <div className="overlay">
                 <section className="result-card stack">
                   {result ? <ChromaImg src={SPRITES.cheer} alt="Alba celebrando" /> : null}
-                  <h2>{result ? (result.stars >= 1 ? "🎉 ¡Submundo superado!" : "⚠️ Submundo completado sin estrella") : failed ? "Se acabaron los corazones" : "Pausa"}</h2>
+                  <h2>{result ? (result.stars >= 1 ? "🎉 ¡Submundo superado!" : "⚠️ Submundo completado sin estrella") : "Se acabaron los corazones"}</h2>
                   {result && (
                     <div className="result-score-summary">
                       <div className="stars-banner">
@@ -837,7 +940,6 @@ export default function GameApp() {
                     </div>
                   )}
                   {failed && <p>Se han agotado los corazones. Puedes reintentar este submundo; las preguntas serán distintas.</p>}
-                  {paused && !result && !failed && <Help />}
                   
                   {(() => {
                     const currentLevel = runRef.current?.levelId ?? "";
@@ -866,7 +968,7 @@ export default function GameApp() {
 
                         <div className="result-secondary-row">
                           {/* 2. Reintentar este mismo submundo */}
-                          {(failed || result) && currentLevel && (
+                          {currentLevel && (
                             <button
                               className="ghost action-btn"
                               onClick={() => {
@@ -904,13 +1006,6 @@ export default function GameApp() {
                           >
                             🏛️ Plaza General
                           </button>
-
-                          {/* Si está en pausa normal */}
-                          {!result && !failed && (
-                            <button className="primary" onClick={() => setPaused(false)}>
-                              Continuar jugando
-                            </button>
-                          )}
                         </div>
                       </div>
                     );

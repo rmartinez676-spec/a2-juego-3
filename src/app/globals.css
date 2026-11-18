@@ -717,3 +717,119 @@ button:focus-visible, a:focus-visible { outline: 3px solid var(--gold); outline-
   }
 }
 
+/* On-Screen Floating Pause Button */
+.canvas-pause-btn {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(15, 26, 36, 0.82);
+  border: 1.5px solid rgba(226, 182, 87, 0.6);
+  color: #fff9ee;
+  font-size: 1.15rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(6px);
+  transition: transform 0.15s ease, background 0.15s ease;
+  user-select: none;
+  touch-action: manipulation;
+}
+.canvas-pause-btn:hover {
+  background: rgba(25, 42, 58, 0.95);
+  transform: scale(1.06);
+}
+.canvas-pause-btn:active {
+  transform: scale(0.94);
+  background: var(--teal);
+}
+
+/* Pause Modal */
+.pause-overlay {
+  z-index: 100;
+  background: rgba(10, 16, 24, 0.78);
+  backdrop-filter: blur(8px);
+}
+.pause-modal-card {
+  max-width: 460px;
+  width: 90%;
+  background: #fffaf0;
+  border: 2px solid var(--gold);
+  border-radius: 24px;
+  padding: 24px 20px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+  color: var(--ink);
+  animation: popIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.pause-modal-header {
+  text-align: center;
+}
+.pause-pill {
+  display: inline-block;
+  background: var(--navy);
+  color: var(--gold);
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  padding: 4px 12px;
+  border-radius: 999px;
+  margin-bottom: 6px;
+}
+.pause-modal-header h2 {
+  margin: 4px 0 2px;
+  font-size: 1.45rem;
+  font-family: var(--font-display);
+}
+.pause-subtitle {
+  color: #726252;
+  font-size: 0.88rem;
+  margin: 0;
+}
+.pause-statutory-tip {
+  background: #f4ecdc;
+  border-left: 4px solid var(--teal);
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 0.84rem;
+  text-align: left;
+}
+.pause-statutory-tip p {
+  margin: 2px 0;
+}
+.pause-menu-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+}
+.pause-btn-resume {
+  font-size: 1.05rem;
+  padding: 14px 18px;
+  font-weight: 800;
+  border-radius: 14px;
+  box-shadow: 0 6px 0 #8d3222;
+}
+.pause-btn-action {
+  padding: 11px 16px;
+  font-weight: 700;
+  border-radius: 12px;
+  font-size: 0.92rem;
+  text-align: center;
+}
+.pause-help-toggle-box {
+  margin-top: 4px;
+  text-align: center;
+}
+.toggle-help-btn {
+  background: transparent;
+  border: none;
+  color: #655444;
+  cursor: pointer;
+  padding: 6px 12px;
+}
+

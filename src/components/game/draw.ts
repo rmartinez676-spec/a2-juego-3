@@ -241,6 +241,31 @@ export function drawRun(ctx: CanvasRenderingContext2D, run: Run, width: number, 
   if (run.prompt) drawPrompt(ctx, run.prompt, width, height);
 }
 
+function drawStar(ctx: CanvasRenderingContext2D, cx: number, cy: number, spikes: number, outerRadius: number, innerRadius: number, color: string) {
+  let rot = (Math.PI / 2) * 3;
+  let x = cx;
+  let y = cy;
+  const step = Math.PI / spikes;
+
+  ctx.beginPath();
+  ctx.moveTo(cx, cy - outerRadius);
+  for (let i = 0; i < spikes; i++) {
+    x = cx + Math.cos(rot) * outerRadius;
+    y = cy + Math.sin(rot) * outerRadius;
+    ctx.lineTo(x, y);
+    rot += step;
+
+    x = cx + Math.cos(rot) * innerRadius;
+    y = cy + Math.sin(rot) * innerRadius;
+    ctx.lineTo(x, y);
+    rot += step;
+  }
+  ctx.lineTo(cx, cy - outerRadius);
+  ctx.closePath();
+  ctx.fillStyle = color;
+  ctx.fill();
+}
+
 function drawBackdrop(
   ctx: CanvasRenderingContext2D,
   run: Run,
@@ -250,40 +275,144 @@ function drawBackdrop(
   viewH: number,
   camY: number,
 ) {
-  // Photorealistic 3D Pixar Backdrop matching each world's unique block theme
+  // 1. Soft atmospheric photographic texture if image exists (blended behind skyline)
   const bgPath = BG_IMAGES[run.theme] ?? BG_IMAGES.madrid;
   const bgImg = getImage(bgPath) ?? getImage(BG_IMAGES.madrid);
   if (bgImg) {
+    ctx.save();
+    ctx.globalAlpha = 0.28;
     const bgH = viewH + 20;
     const bgW = (bgH / bgImg.height) * bgImg.width;
-    const offset = ((-camX * 0.22) % bgW) - bgW;
+    const offset = ((-camX * 0.16) % bgW) - bgW;
     const startX = camX + offset;
     for (let x = startX; x < camX + viewW + bgW; x += bgW) {
       ctx.drawImage(bgImg, x, camY - 10, bgW, bgH);
     }
-    return;
+    ctx.restore();
   }
 
-  // Fallback procedural backdrop
-  // 1. Radiant Sun with atmospheric glow
+  const tKey = run.theme;
+  const time = run.time;
+
+  // 2. Thematic Celestial Bodies and Atmospheric Phenomena
   const sunX = camX + viewW * 0.72 - (camX * 0.04) % (viewW * 1.2);
   const sunY = camY + 84;
-  const glow = ctx.createRadialGradient(sunX, sunY, 15, sunX, sunY, 180);
-  glow.addColorStop(0, "rgba(255, 250, 220, 0.95)");
-  glow.addColorStop(0.2, "rgba(255, 225, 160, 0.45)");
-  glow.addColorStop(0.5, "rgba(255, 200, 140, 0.18)");
-  glow.addColorStop(1, "rgba(255, 180, 120, 0)");
-  ctx.fillStyle = glow;
-  ctx.beginPath();
-  ctx.arc(sunX, sunY, 180, 0, Math.PI * 2);
-  ctx.fill();
 
-  ctx.fillStyle = "#ffffff";
-  ctx.beginPath();
-  ctx.arc(sunX, sunY, 32, 0, Math.PI * 2);
-  ctx.fill();
+  if (tKey === "hacienda") {
+    // Grand Golden Fiscal Sun with Shimmering Currency Aura
+    const glow = ctx.createRadialGradient(sunX, sunY, 15, sunX, sunY, 190);
+    glow.addColorStop(0, "rgba(255, 235, 120, 0.95)");
+    glow.addColorStop(0.3, "rgba(244, 190, 60, 0.45)");
+    glow.addColorStop(0.7, "rgba(35, 140, 90, 0.18)");
+    glow.addColorStop(1, "rgba(10, 45, 30, 0)");
+    ctx.fillStyle = glow;
+    ctx.beginPath();
+    ctx.arc(sunX, sunY, 190, 0, Math.PI * 2);
+    ctx.fill();
 
-  // 2. Distant Sierra de Guadarrama Mountain Ridges (Layer 1 - Far)
+    // Golden solar coin disc
+    ctx.fillStyle = "#ffd966";
+    ctx.beginPath();
+    ctx.arc(sunX, sunY, 34, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = "#e5b452";
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+
+    // Floating golden currency sparkle constellation
+    ctx.fillStyle = "rgba(255, 225, 90, 0.75)";
+    for (let i = 0; i < 7; i++) {
+      const cx = camX + ((i * 180 + Math.sin(time + i) * 20) % viewW);
+      const cy = camY + 40 + ((i * 35) % 90);
+      ctx.beginPath();
+      ctx.arc(cx, cy, 2.5 + Math.sin(time * 3 + i) * 1.2, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  } else if (tKey === "europa") {
+    // 12 Golden Stars of the European Union in orbit
+    const ringCenterX = camX + viewW * 0.65;
+    const ringCenterY = camY + 76;
+    const rx = 65;
+    const ry = 36;
+    for (let i = 0; i < 12; i++) {
+      const angle = time * 0.4 + (i * Math.PI * 2) / 12;
+      const sx = ringCenterX + Math.cos(angle) * rx;
+      const sy = ringCenterY + Math.sin(angle) * ry;
+
+      // Glow
+      ctx.fillStyle = "rgba(255, 220, 80, 0.35)";
+      ctx.beginPath();
+      ctx.arc(sx, sy, 8, 0, Math.PI * 2);
+      ctx.fill();
+
+      // 5-point Gold Star
+      drawStar(ctx, sx, sy, 5, 5.5, 2.8, "#ffd54f");
+    }
+  } else if (tKey === "jardin") {
+    // Bright Ecological Sun with Agenda 2030 Rainbow Halo
+    const glow = ctx.createRadialGradient(sunX, sunY, 20, sunX, sunY, 160);
+    glow.addColorStop(0, "rgba(255, 255, 240, 0.98)");
+    glow.addColorStop(0.25, "rgba(255, 235, 150, 0.55)");
+    glow.addColorStop(0.6, "rgba(120, 220, 160, 0.22)");
+    glow.addColorStop(1, "rgba(80, 180, 120, 0)");
+    ctx.fillStyle = glow;
+    ctx.beginPath();
+    ctx.arc(sunX, sunY, 160, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = "#ffffff";
+    ctx.beginPath();
+    ctx.arc(sunX, sunY, 30, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Subtle rainbow refraction arc
+    ctx.save();
+    ctx.globalAlpha = 0.35;
+    const rainbowColors = ["#e5243b", "#dda63a", "#4c9f38", "#c5192d", "#ff3a21", "#26bde2", "#fcc30b", "#a21942", "#fd6925", "#dd1367", "#fd9d24", "#bf8b2e", "#3f7e44", "#0a97d9", "#56c02b", "#00689d", "#19486a"];
+    for (let r = 0; r < 6; r++) {
+      ctx.strokeStyle = rainbowColors[(r * 3) % rainbowColors.length];
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.arc(sunX, sunY, 48 + r * 3, Math.PI * 0.15, Math.PI * 0.85);
+      ctx.stroke();
+    }
+    ctx.restore();
+  } else if (tKey === "sello") {
+    // Moody Archival Amber Moon behind misty clouds
+    const moonX = camX + viewW * 0.76;
+    const moonY = camY + 68;
+    const moonGlow = ctx.createRadialGradient(moonX, moonY, 10, moonX, moonY, 100);
+    moonGlow.addColorStop(0, "rgba(255, 210, 140, 0.9)");
+    moonGlow.addColorStop(0.4, "rgba(190, 140, 110, 0.35)");
+    moonGlow.addColorStop(1, "rgba(50, 35, 60, 0)");
+    ctx.fillStyle = moonGlow;
+    ctx.beginPath();
+    ctx.arc(moonX, moonY, 100, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = "#ffecd2";
+    ctx.beginPath();
+    ctx.arc(moonX, moonY, 26, 0, Math.PI * 2);
+    ctx.fill();
+  } else {
+    // Standard Warm Madrid Sun
+    const glow = ctx.createRadialGradient(sunX, sunY, 15, sunX, sunY, 180);
+    glow.addColorStop(0, "rgba(255, 250, 220, 0.95)");
+    glow.addColorStop(0.2, "rgba(255, 225, 160, 0.45)");
+    glow.addColorStop(0.5, "rgba(255, 200, 140, 0.18)");
+    glow.addColorStop(1, "rgba(255, 180, 120, 0)");
+    ctx.fillStyle = glow;
+    ctx.beginPath();
+    ctx.arc(sunX, sunY, 180, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = "#ffffff";
+    ctx.beginPath();
+    ctx.arc(sunX, sunY, 32, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // 3. Mountain Ridges (Layer 1 - Far)
   const mountainBase = camY + viewH - 120;
   ctx.fillStyle = theme.mountainFar;
   ctx.globalAlpha = 0.55;
@@ -295,17 +424,49 @@ function drawBackdrop(
   drawMountainRidge(ctx, camX - 100, mountainBase - 15, viewW + 200, 110, 40, camX * 0.14 + 180);
   ctx.globalAlpha = 1;
 
-  // 3. Volumetric Clouds with Depth
+  // 4. In Jardín: Animated Clean Energy Wind Turbines on the hills
+  if (tKey === "jardin") {
+    ctx.save();
+    ctx.fillStyle = "#ffffff";
+    ctx.strokeStyle = "#ffffff";
+    for (let i = 0; i < 4; i++) {
+      const tx = camX + ((i * 320 - camX * 0.12) % (viewW + 200)) + 60;
+      const ty = mountainBase - 25 + (i % 2) * 12;
+      // Mast
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(tx, ty);
+      ctx.lineTo(tx, ty - 32);
+      ctx.stroke();
+      // Rotor hub
+      ctx.beginPath();
+      ctx.arc(tx, ty - 32, 2.5, 0, Math.PI * 2);
+      ctx.fill();
+      // 3 Blades spinning
+      const spin = time * 2.2 + i * 1.5;
+      for (let b = 0; b < 3; b++) {
+        const bladeAngle = spin + (b * Math.PI * 2) / 3;
+        ctx.lineWidth = 1.8;
+        ctx.beginPath();
+        ctx.moveTo(tx, ty - 32);
+        ctx.lineTo(tx + Math.cos(bladeAngle) * 16, ty - 32 + Math.sin(bladeAngle) * 16);
+        ctx.stroke();
+      }
+    }
+    ctx.restore();
+  }
+
+  // 5. Volumetric Clouds with Depth
   drawClouds(ctx, theme, camX, camY, viewW);
 
-  // 4. Rolling park hills behind the city
+  // 6. Rolling park hills behind the city
   ctx.fillStyle = theme.hill2;
   wave(ctx, camX - 60, mountainBase + 10, viewW + 120, 140, 48, camX * 0.22);
   ctx.fillStyle = theme.hill;
   wave(ctx, camX - 60, mountainBase + 34, viewW + 120, 130, 36, camX * 0.35 + 80);
 
-  // 5. Rich Madrid Architecture & Institutional Skyline
-  drawSkyline(ctx, run.theme, theme, camX, camY + viewH - 170, viewW);
+  // 7. Rich Thematic Architecture & Institutional Skyline per Block/World
+  drawSkyline(ctx, run.theme, theme, camX, camY + viewH - 170, viewW, run.time);
 }
 
 function drawMountainRidge(
@@ -383,6 +544,7 @@ function drawSkyline(
   camX: number,
   y: number,
   viewW: number,
+  time: number = 0,
 ) {
   const blockW = 120;
   const start = Math.floor(camX / blockW) * blockW - blockW;
@@ -394,13 +556,222 @@ function drawSkyline(
     ctx.save();
     ctx.translate(px, y - h);
 
-    if (themeKey === "europa") {
-      // European Community architecture (Brussels / Berlaymont inspired)
-      ctx.fillStyle = n % 2 ? "#1f4a76" : "#17385a";
+    if (themeKey === "hacienda") {
+      // 1. Fortaleza de la Hacienda / Banco de España / Tesoro Público (Emerald & Gold)
+      const wallColor = n % 2 ? "#144533" : "#0f3627";
+      const goldTrim = "#d4af37";
+      const goldBright = "#f5cb4a";
+
+      // Neoclassical Banker Facade
+      ctx.fillStyle = wallColor;
+      ctx.fillRect(8, 20, 104, h);
+
+      // Gold Entablature & Cornice
+      ctx.fillStyle = goldTrim;
+      ctx.fillRect(4, 14, 112, 7);
+      ctx.fillStyle = goldBright;
+      ctx.fillRect(6, 6, 108, 6);
+
+      // Golden Rooftop Balustrade
+      ctx.fillStyle = "#a88526";
+      ctx.fillRect(10, 0, 100, 3);
+      for (let b = 12; b < 105; b += 8) {
+        ctx.fillRect(b, 3, 3, 4);
+      }
+
+      // Windows with golden interior glow & iron security crossbars
+      for (let wy = 30; wy < h - 12; wy += 26) {
+        for (let wx = 18; wx < 100; wx += 28) {
+          ctx.fillStyle = goldTrim;
+          ctx.fillRect(wx - 2, wy - 3, 20, 22);
+          ctx.beginPath();
+          ctx.arc(wx + 8, wy - 3, 10, Math.PI, Math.PI * 2);
+          ctx.fill();
+
+          ctx.fillStyle = "rgba(255, 235, 140, 0.92)";
+          ctx.fillRect(wx, wy, 16, 17);
+          ctx.beginPath();
+          ctx.arc(wx + 8, wy, 8, Math.PI, Math.PI * 2);
+          ctx.fill();
+
+          // Iron vault security bars
+          ctx.fillStyle = "#162b20";
+          ctx.fillRect(wx + 4, wy - 4, 1.5, 21);
+          ctx.fillRect(wx + 8, wy - 6, 1.5, 23);
+          ctx.fillRect(wx + 12, wy - 4, 1.5, 21);
+          ctx.fillRect(wx, wy + 8, 16, 1.5);
+        }
+      }
+
+      // 4 Fluted Golden Corinthian Columns
+      for (let c = 0; c < 4; c++) {
+        const cx = 16 + c * 24;
+        ctx.fillStyle = goldBright;
+        ctx.fillRect(cx, 24, 7, h - 24);
+        ctx.fillStyle = goldTrim;
+        ctx.fillRect(cx - 2, 21, 11, 4);
+        ctx.fillRect(cx - 2, h - 3, 11, 4);
+      }
+
+      // Feature on roof
+      if (n % 3 === 0) {
+        // Giant Spinning Bank Vault Gear
+        const gx = 60;
+        const gy = -10;
+        const gSpin = time * 0.4 + n;
+        ctx.fillStyle = "#221a12";
+        ctx.beginPath();
+        ctx.arc(gx, gy, 20, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = goldBright;
+        ctx.lineWidth = 3;
+        ctx.stroke();
+
+        // Gear teeth
+        ctx.fillStyle = goldBright;
+        for (let t = 0; t < 8; t++) {
+          const ga = gSpin + (t * Math.PI * 2) / 8;
+          ctx.fillRect(gx + Math.cos(ga) * 19 - 2.5, gy + Math.sin(ga) * 19 - 2.5, 5, 5);
+        }
+        // Center dial
+        ctx.fillStyle = goldTrim;
+        ctx.beginPath();
+        ctx.arc(gx, gy, 7, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (n % 3 === 1) {
+        // Classical Pediment with Golden Scales of Justice
+        ctx.fillStyle = goldTrim;
+        ctx.beginPath();
+        ctx.moveTo(18, 6);
+        ctx.lineTo(60, -16);
+        ctx.lineTo(102, 6);
+        ctx.fill();
+        ctx.fillStyle = wallColor;
+        ctx.beginPath();
+        ctx.moveTo(24, 6);
+        ctx.lineTo(60, -11);
+        ctx.lineTo(96, 6);
+        ctx.fill();
+        // Golden Scale symbol
+        ctx.fillStyle = goldBright;
+        ctx.fillRect(59, -8, 2, 10);
+        ctx.fillRect(52, -5, 16, 2);
+        ctx.beginPath();
+        ctx.arc(52, 1, 3, 0, Math.PI);
+        ctx.arc(68, 1, 3, 0, Math.PI);
+        ctx.fill();
+      } else {
+        // Golden Treasury Dome with Coin Spire
+        ctx.fillStyle = goldTrim;
+        ctx.beginPath();
+        ctx.moveTo(34, 6);
+        ctx.bezierCurveTo(34, -30, 86, -30, 86, 6);
+        ctx.fill();
+        ctx.fillStyle = goldBright;
+        ctx.fillRect(58, -38, 4, 10);
+        ctx.beginPath();
+        ctx.arc(60, -42, 6, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    } else if (themeKey === "jardin") {
+      // 2. Paseo de los Ministerios (Políticas Públicas - Eco Bioclimatic Architecture)
+      const wallColor = n % 2 ? "#ebf6ee" : "#d9edd9";
+      const timberColor = "#8c5c38";
+      const greenPlant = "#3c8a4c";
+      const glassCyan = "#7fd4e3";
+
+      // Modern Eco-Pavilion Body
+      round(ctx, 8, 16, 104, h + 10, 8);
+      ctx.fillStyle = wallColor;
+      ctx.fill();
+
+      // Cedar wood pergola brackets & trim
+      ctx.fillStyle = timberColor;
+      ctx.fillRect(6, 12, 108, 5);
+
+      // Living vertical plant garden walls on facade
+      ctx.fillStyle = greenPlant;
+      ctx.fillRect(12, 26, 14, h - 38);
+      ctx.fillRect(94, 26, 14, h - 38);
+      // Small pink and white flowers on living wall
+      ctx.fillStyle = "#ff8fa3";
+      for (let fl = 30; fl < h - 16; fl += 14) {
+        ctx.fillRect(15, fl, 3, 3);
+        ctx.fillRect(97, fl + 4, 3, 3);
+      }
+
+      // Panoramic solar glass curtain windows
+      ctx.fillStyle = glassCyan;
+      ctx.globalAlpha = 0.75;
+      for (let wy = 28; wy < h - 14; wy += 22) {
+        for (let wx = 32; wx < 88; wx += 26) {
+          round(ctx, wx, wy, 22, 16, 3);
+          ctx.fill();
+        }
+      }
+      ctx.globalAlpha = 1;
+
+      // Rooftop features
+      if (n % 3 === 0) {
+        // Retiro Glass Crystal Greenhouse Dome
+        ctx.fillStyle = "rgba(125, 215, 230, 0.65)";
+        ctx.beginPath();
+        ctx.arc(60, 6, 26, Math.PI, 0);
+        ctx.fill();
+        ctx.strokeStyle = "#408560";
+        ctx.lineWidth = 1.8;
+        ctx.stroke();
+        // Palm frond inside dome
+        ctx.fillStyle = "#2c703b";
+        ctx.beginPath();
+        ctx.arc(60, 4, 12, Math.PI * 0.2, Math.PI * 0.8);
+        ctx.fill();
+      } else if (n % 3 === 1) {
+        // Tilted Solar Photovoltaic Panels on roof
+        ctx.fillStyle = "#1e486b";
+        ctx.beginPath();
+        ctx.moveTo(24, 8);
+        ctx.lineTo(48, -12);
+        ctx.lineTo(92, -12);
+        ctx.lineTo(72, 8);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = "#a5d8f0";
+        ctx.lineWidth = 1.2;
+        ctx.stroke();
+        // Solar grid lines
+        ctx.beginPath();
+        ctx.moveTo(36, 8); ctx.lineTo(60, -12);
+        ctx.moveTo(52, 8); ctx.lineTo(76, -12);
+        ctx.stroke();
+      } else {
+        // Agenda 2030 Rainbow colored banner ribbon
+        const rCols = ["#e5243b", "#4c9f38", "#ff3a21", "#26bde2", "#fcc30b", "#dd1367", "#00689d"];
+        for (let c = 0; c < rCols.length; c++) {
+          ctx.fillStyle = rCols[c];
+          ctx.fillRect(18 + c * 12, 4, 12, 6);
+        }
+      }
+
+      // Flowering Jacaranda / Plane Tree beside pavilion
+      ctx.fillStyle = "#5c3c26";
+      ctx.fillRect(114, h - 26, 6, 26);
+      ctx.fillStyle = "#8a489c"; // Jacaranda violet
+      ctx.beginPath();
+      ctx.arc(117, h - 28, 16, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#489e50"; // Green foliage
+      ctx.beginPath();
+      ctx.arc(114, h - 24, 12, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (themeKey === "europa") {
+      // 3. Archipiélago de las Doce Estrellas (Brussels & Strasbourg European Architecture)
+      ctx.fillStyle = n % 2 ? "#183e68" : "#122f50";
       round(ctx, 6, 12, 108, h + 20, 6);
       ctx.fill();
-      // Glass curtain wall windows
-      ctx.fillStyle = "#8ec4eb";
+
+      // Reflective cyan glass curtain wall
+      ctx.fillStyle = "#70b8e8";
       ctx.globalAlpha = 0.65;
       for (let r = 24; r < h; r += 16) {
         for (let c = 14; c < 100; c += 18) {
@@ -408,124 +779,171 @@ function drawSkyline(
         }
       }
       ctx.globalAlpha = 1;
-      // Golden star emblem
-      ctx.fillStyle = "#ffd54f";
+
+      // Chrome roofline & Golden Stars
+      ctx.fillStyle = "#94afc7";
+      ctx.fillRect(6, 8, 108, 4);
+      drawStar(ctx, 60, -4, 5, 9, 4.5, "#ffd54f");
+
+      // European flag waving
+      ctx.fillStyle = "#698099";
+      ctx.fillRect(94, -28, 2, 36);
+      ctx.fillStyle = "#0c3066";
+      ctx.fillRect(96, -27, 18, 11);
+      drawStar(ctx, 105, -21, 5, 3, 1.5, "#ffd54f");
+    } else if (themeKey === "sello") {
+      // 4. Ciudad del Sello (Simancas Antique Granite Fortress & Machicolations)
+      const stoneDark = n % 2 ? "#322b3d" : "#241f2c";
+      ctx.fillStyle = stoneDark;
+      ctx.fillRect(8, 18, 104, h);
+
+      // Machicolations and crenellations on roof
+      ctx.fillStyle = "#4a4058";
+      ctx.fillRect(4, 10, 112, 8);
+      for (let c = 8; c < 112; c += 18) {
+        ctx.fillRect(c, 0, 10, 10);
+      }
+
+      // Gothic narrow arrow slits with orange torchlight
+      for (let wy = 34; wy < h - 14; wy += 32) {
+        for (let wx = 24; wx < 100; wx += 36) {
+          ctx.fillStyle = "#16131c";
+          round(ctx, wx - 1, wy - 1, 10, 24, 4);
+          ctx.fill();
+          ctx.fillStyle = "rgba(255, 175, 60, 0.88)";
+          ctx.fillRect(wx + 2, wy + 2, 4, 18);
+        }
+      }
+
+      // Giant Red Wax Seal Medallion on stone facade
+      ctx.fillStyle = "#962327";
       ctx.beginPath();
-      ctx.arc(60, 6, 8, 0, Math.PI * 2);
+      ctx.arc(60, 36, 12, 0, Math.PI * 2);
       ctx.fill();
+      ctx.fillStyle = "#e5b452";
+      ctx.beginPath();
+      ctx.arc(60, 36, 6, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (themeKey === "campus") {
+      // 5. Campus de Función Pública (Madrid Neo-Mudéjar Red Brick & White Granite)
+      const brickRed = n % 2 ? "#8f3020" : "#a83a27";
+      const stoneWhite = "#eee6d6";
+
+      // Red brick body
+      ctx.fillStyle = brickRed;
+      ctx.fillRect(8, 20, 104, h);
+
+      // White granite horizontal bands
+      ctx.fillStyle = stoneWhite;
+      ctx.fillRect(4, 14, 112, 6);
+      ctx.fillRect(8, 45, 104, 3);
+      ctx.fillRect(8, 75, 104, 3);
+
+      // Horseshoe Mudéjar brick arched windows
+      for (let wy = 26; wy < h - 14; wy += 30) {
+        for (let wx = 20; wx < 100; wx += 28) {
+          ctx.fillStyle = stoneWhite;
+          ctx.beginPath();
+          ctx.arc(wx + 8, wy + 2, 8, Math.PI, 0);
+          ctx.lineTo(wx + 16, wy + 18);
+          ctx.lineTo(wx, wy + 18);
+          ctx.fill();
+
+          ctx.fillStyle = "#2c1c14";
+          ctx.fillRect(wx + 2, wy + 4, 12, 14);
+        }
+      }
+
+      // Central INAP Clock Tower at 10:10
+      if (n % 3 === 1) {
+        ctx.fillStyle = brickRed;
+        ctx.fillRect(40, -32, 40, 46);
+        ctx.fillStyle = stoneWhite;
+        ctx.fillRect(36, -34, 48, 5);
+        ctx.fillRect(44, -50, 32, 16);
+
+        // Clock Face
+        ctx.fillStyle = "#ffffff";
+        ctx.beginPath();
+        ctx.arc(60, -14, 12, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = "#3a2218";
+        ctx.lineWidth = 1.8;
+        ctx.stroke();
+
+        // Hands pointing to 10:10
+        ctx.strokeStyle = "#22140d";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(60, -14);
+        ctx.lineTo(55, -20); // hour hand to 10
+        ctx.moveTo(60, -14);
+        ctx.lineTo(67, -20); // minute hand to 2
+        ctx.stroke();
+      }
+    } else if (themeKey === "carta") {
+      // 6. Palacio de la Carta Magna (Congreso de los Diputados Neoclassical Marble)
+      const marble = n % 2 ? "#fcf9f2" : "#efe6d5";
+      ctx.fillStyle = marble;
+      ctx.fillRect(8, 20, 104, h);
+
+      // Classical entablature & pediment
+      ctx.fillStyle = "#d6c1a0";
+      ctx.fillRect(4, 12, 112, 8);
+
+      // Triangular pediment with 1978 in gold
+      ctx.fillStyle = "#d6c1a0";
+      ctx.beginPath();
+      ctx.moveTo(16, 12);
+      ctx.lineTo(60, -16);
+      ctx.lineTo(104, 12);
+      ctx.fill();
+      ctx.fillStyle = marble;
+      ctx.beginPath();
+      ctx.moveTo(22, 12);
+      ctx.lineTo(60, -11);
+      ctx.lineTo(98, 12);
+      ctx.fill();
+
+      // 4 Monumental Corinthian Columns
+      for (let c = 0; c < 4; c++) {
+        const cx = 18 + c * 23;
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(cx, 20, 7, h - 20);
+        ctx.fillStyle = "#d6c1a0";
+        ctx.fillRect(cx - 2, 18, 11, 4);
+      }
+
+      // Spanish Flag waving
+      ctx.fillStyle = "#5c4f46";
+      ctx.fillRect(59, -38, 2, 22);
+      ctx.fillStyle = "#c43328";
+      ctx.fillRect(61, -37, 18, 11);
+      ctx.fillStyle = "#f3bf2e";
+      ctx.fillRect(61, -34, 18, 5);
     } else {
-      // Madrid Neoclassical & Institutional Façades (INAP / Ministerios / Gran Vía)
-      const isCornerDome = n % 4 === 1;
-      const isClockTower = n % 4 === 3;
+      // Default: Classical Madrid Skyline
       const wallColor = n % 2 ? "#f4dfc3" : "#eed5b4";
       const trimColor = "#d6b58e";
 
-      // Main facade body
       ctx.fillStyle = wallColor;
       ctx.fillRect(8, 20, 104, h);
-
-      // Classical stone cornice / entablature
       ctx.fillStyle = trimColor;
       ctx.fillRect(4, 14, 112, 8);
       ctx.fillRect(6, 6, 108, 6);
 
-      // Balustrade on rooftop
+      // Balustrade
       ctx.fillStyle = "#bfa07c";
       ctx.fillRect(10, 0, 100, 3);
-      for (let b = 12; b < 105; b += 8) {
-        ctx.fillRect(b, 3, 3, 4);
-      }
+      for (let b = 12; b < 105; b += 8) ctx.fillRect(b, 3, 3, 4);
 
-      // Windows with warm interior light
+      // Windows
       for (let wy = 30; wy < h - 12; wy += 26) {
         for (let wx = 18; wx < 100; wx += 28) {
-          // Arched window surround
-          ctx.fillStyle = trimColor;
-          ctx.fillRect(wx - 2, wy - 3, 20, 22);
-          ctx.beginPath();
-          ctx.arc(wx + 8, wy - 3, 10, Math.PI, Math.PI * 2);
-          ctx.fill();
-
-          // Glass with warm glowing light
           ctx.fillStyle = "rgba(255, 235, 160, 0.88)";
           ctx.fillRect(wx, wy, 16, 17);
-          ctx.beginPath();
-          ctx.arc(wx + 8, wy, 8, Math.PI, Math.PI * 2);
-          ctx.fill();
-
-          // Dark window sash / mullions
-          ctx.fillStyle = "#4a3528";
-          ctx.fillRect(wx + 7, wy - 6, 2, 23);
-          ctx.fillRect(wx, wy + 8, 16, 2);
         }
       }
-
-      // Feature: Madrid Slate Mansard Dome or Clock Tower
-      if (isCornerDome) {
-        // Paris/Madrid zinc-slate dome
-        ctx.fillStyle = "#485263";
-        ctx.beginPath();
-        ctx.moveTo(34, 6);
-        ctx.bezierCurveTo(34, -28, 86, -28, 86, 6);
-        ctx.fill();
-        // Brass finial
-        ctx.fillStyle = "#e5b452";
-        ctx.fillRect(58, -36, 4, 10);
-        ctx.beginPath();
-        ctx.arc(60, -38, 5, 0, Math.PI * 2);
-        ctx.fill();
-      } else if (isClockTower) {
-        // Institutional clock tower
-        ctx.fillStyle = "#d6b58e";
-        ctx.fillRect(42, -26, 36, 32);
-        ctx.fillStyle = "#eed5b4";
-        ctx.fillRect(45, -23, 30, 26);
-        // Clock face
-        ctx.fillStyle = "#ffffff";
-        ctx.beginPath();
-        ctx.arc(60, -10, 10, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.strokeStyle = "#3a2218";
-        ctx.lineWidth = 1.5;
-        ctx.stroke();
-        // Clock hands
-        ctx.fillStyle = "#3a2218";
-        ctx.fillRect(59, -16, 2, 7);
-        ctx.fillRect(60, -11, 5, 2);
-
-        // Flagpole with waving Spanish / Institutional flag
-        ctx.fillStyle = "#695e57";
-        ctx.fillRect(59, -50, 2, 24);
-        ctx.fillStyle = "#c43328";
-        ctx.fillRect(61, -49, 18, 11);
-        ctx.fillStyle = "#f3bf2e";
-        ctx.fillRect(61, -46, 18, 5);
-      } else {
-        // Classical triangular pediment (Frontón clásico)
-        ctx.fillStyle = trimColor;
-        ctx.beginPath();
-        ctx.moveTo(20, 6);
-        ctx.lineTo(60, -14);
-        ctx.lineTo(100, 6);
-        ctx.fill();
-        ctx.fillStyle = wallColor;
-        ctx.beginPath();
-        ctx.moveTo(26, 6);
-        ctx.lineTo(60, -9);
-        ctx.lineTo(94, 6);
-        ctx.fill();
-      }
-
-      // Classical Madrid park tree in front of facade gap
-      ctx.fillStyle = "#4a6838";
-      ctx.beginPath();
-      ctx.arc(114, h - 16, 18, 0, Math.PI * 2);
-      ctx.arc(118, h - 30, 14, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = "#3d572d";
-      ctx.beginPath();
-      ctx.arc(116, h - 14, 14, 0, Math.PI * 2);
-      ctx.fill();
     }
     ctx.restore();
   }
@@ -534,6 +952,7 @@ function drawSkyline(
 function drawTiles(ctx: CanvasRenderingContext2D, run: Run, theme: Theme, camX: number, viewW: number) {
   const x0 = Math.max(0, Math.floor(camX / T) - 1);
   const x1 = Math.min(run.W - 1, Math.ceil((camX + viewW) / T) + 1);
+  const tKey = run.theme;
 
   for (let y = 0; y < run.H; y++) {
     for (let x = x0; x <= x1; x++) {
@@ -543,111 +962,261 @@ function drawTiles(ctx: CanvasRenderingContext2D, run: Run, theme: Theme, camX: 
       const py = y * T;
 
       if (tile === 2) {
-        // Floating platform: Classical carved stone balcony / shelf
-        // Top stone moulding
-        ctx.fillStyle = theme.topHighlight;
-        round(ctx, px, py + 6, T, 6, 2);
-        ctx.fill();
-
-        ctx.fillStyle = theme.top;
-        ctx.fillRect(px, py + 12, T, 8);
-
-        // Gold inlay trim
-        ctx.fillStyle = theme.accentGold;
-        ctx.fillRect(px + 4, py + 15, T - 8, 2);
-
-        // Classical stone bracket corbels underneath (ménsulas de piedra)
-        ctx.fillStyle = theme.ground;
-        // Left corbel
-        ctx.beginPath();
-        ctx.moveTo(px + 4, py + 20);
-        ctx.lineTo(px + 12, py + 20);
-        ctx.lineTo(px + 6, py + 32);
-        ctx.lineTo(px + 4, py + 20);
-        ctx.fill();
-
-        // Right corbel
-        ctx.beginPath();
-        ctx.moveTo(px + T - 12, py + 20);
-        ctx.lineTo(px + T - 4, py + 20);
-        ctx.lineTo(px + T - 4, py + 32);
-        ctx.lineTo(px + T - 12, py + 20);
-        ctx.fill();
-
-        ctx.fillStyle = "rgba(0,0,0,0.12)";
-        ctx.fillRect(px, py + 19, T, 2);
+        // ==========================================
+        // FLOATING PLATFORMS (tile === 2) PER THEME
+        // ==========================================
+        if (tKey === "hacienda") {
+          // Solid Gold Bullion Ingot Platform with Emerald Velvet Runner
+          ctx.fillStyle = "#f5cb4a";
+          round(ctx, px, py + 6, T, 14, 3);
+          ctx.fill();
+          // Top gold shine
+          ctx.fillStyle = "#fff099";
+          ctx.fillRect(px + 2, py + 7, T - 4, 2);
+          // Dark emerald velvet inset
+          ctx.fillStyle = "#124e38";
+          ctx.fillRect(px + 4, py + 10, T - 8, 7);
+          // Gold rivets
+          ctx.fillStyle = "#ffd966";
+          ctx.fillRect(px + 6, py + 12, 3, 3);
+          ctx.fillRect(px + T - 9, py + 12, 3, 3);
+          // Gold brackets underneath
+          ctx.fillStyle = "#c99e28";
+          ctx.fillRect(px + 4, py + 20, 6, 8);
+          ctx.fillRect(px + T - 10, py + 20, 6, 8);
+        } else if (tKey === "jardin") {
+          // Cedar Wood Pergola with Hanging Green Ivy Leaves & Flowers
+          ctx.fillStyle = "#8c5a36";
+          round(ctx, px, py + 6, T, 12, 3);
+          ctx.fill();
+          ctx.fillStyle = "#a87146";
+          ctx.fillRect(px + 2, py + 7, T - 4, 3);
+          // Hanging green ivy vine leaves
+          ctx.fillStyle = "#38822d";
+          ctx.beginPath();
+          ctx.arc(px + 8, py + 20, 4, 0, Math.PI * 2);
+          ctx.arc(px + 18, py + 22, 5, 0, Math.PI * 2);
+          ctx.arc(px + 32, py + 21, 4.5, 0, Math.PI * 2);
+          ctx.fill();
+          // Violet and white floral blossoms
+          ctx.fillStyle = "#cf8bf0";
+          ctx.fillRect(px + 9, py + 21, 2.5, 2.5);
+          ctx.fillRect(px + 33, py + 22, 2.5, 2.5);
+        } else if (tKey === "europa") {
+          // High-Tech Azure Glass Platform with Neon Cyan Light Strip
+          ctx.fillStyle = "rgba(75, 145, 215, 0.88)";
+          round(ctx, px, py + 6, T, 12, 3);
+          ctx.fill();
+          // Glowing cyan underglow
+          ctx.fillStyle = "#00e5ff";
+          ctx.fillRect(px + 2, py + 16, T - 4, 2.5);
+          // Chrome brackets
+          ctx.fillStyle = "#a0bccc";
+          ctx.fillRect(px + 4, py + 18, 5, 8);
+          ctx.fillRect(px + T - 9, py + 18, 5, 8);
+        } else if (tKey === "sello") {
+          // Dark Weathered Oak Timber Beams with Iron Strap Brackets
+          ctx.fillStyle = "#3d2d1e";
+          round(ctx, px, py + 6, T, 14, 2);
+          ctx.fill();
+          ctx.fillStyle = "#57422f";
+          ctx.fillRect(px + 2, py + 7, T - 4, 3);
+          // Forged iron strap brackets & rivets
+          ctx.fillStyle = "#1e1b24";
+          ctx.fillRect(px + 5, py + 6, 7, 18);
+          ctx.fillRect(px + T - 12, py + 6, 7, 18);
+          ctx.fillStyle = "#948f9e";
+          ctx.fillRect(px + 7, py + 9, 3, 3);
+          ctx.fillRect(px + T - 10, py + 9, 3, 3);
+        } else if (tKey === "campus") {
+          // Madrid Neo-Mudéjar Terracotta Brick Arch Platform
+          ctx.fillStyle = "#9c3525";
+          round(ctx, px, py + 6, T, 14, 2);
+          ctx.fill();
+          // White limestone coping
+          ctx.fillStyle = "#eee6d6";
+          ctx.fillRect(px, py + 6, T, 4);
+          // Brick seam joints
+          ctx.fillStyle = "#702316";
+          ctx.fillRect(px + 12, py + 10, 1.5, 9);
+          ctx.fillRect(px + 28, py + 10, 1.5, 9);
+        } else if (tKey === "carta") {
+          // Fluted Carrara Marble Balcony with Gold Dentils
+          ctx.fillStyle = "#fcfaf4";
+          round(ctx, px, py + 6, T, 12, 2);
+          ctx.fill();
+          ctx.fillStyle = "#d4af37";
+          ctx.fillRect(px + 3, py + 14, T - 6, 2.5);
+          ctx.fillStyle = "#c43328";
+          ctx.fillRect(px + 5, py + 17, T - 10, 1.5);
+        } else {
+          // Fallback Classical Carved Stone Balcony
+          ctx.fillStyle = theme.topHighlight;
+          round(ctx, px, py + 6, T, 6, 2);
+          ctx.fill();
+          ctx.fillStyle = theme.top;
+          ctx.fillRect(px, py + 12, T, 8);
+          ctx.fillStyle = theme.accentGold;
+          ctx.fillRect(px + 4, py + 15, T - 8, 2);
+        }
         continue;
       }
 
-      // Solid ground tile (tile === 1)
+      // ==========================================
+      // SOLID GROUND TILES (tile === 1) PER THEME
+      // ==========================================
       const exposed = y === 0 || run.tiles[(y - 1) * run.W + x] !== 1;
-      const stoneImg = getImage(BG_IMAGES.stone);
 
       if (exposed) {
-        // Granite cobblestone paving (Adoquines de granito con bordillo pulido)
-        if (stoneImg) {
-          const sx = Math.abs(x * 96) % (stoneImg.naturalWidth ? stoneImg.naturalWidth - 96 : 928);
-          const sy = Math.abs(y * 96) % (stoneImg.naturalHeight ? stoneImg.naturalHeight - 96 : 928);
-          ctx.drawImage(stoneImg, sx, sy, 96, 96, px, py, T, T);
-          // Very light warm tint
-          ctx.fillStyle = "rgba(40, 25, 15, 0.08)";
+        if (tKey === "hacienda") {
+          // Polished Emerald Malachite Marble with Gold Foil Veining & Brass Studded Curb
+          ctx.fillStyle = "#0f3a2b";
           ctx.fillRect(px, py, T, T);
+          // Lighter green vein
+          ctx.fillStyle = "#1b5a44";
+          ctx.fillRect(px + 4, py + 14, 18, 14);
+          ctx.fillRect(px + 26, py + 22, 16, 12);
+          // Gold foil veins
+          ctx.strokeStyle = "#e5b452";
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(px + 2, py + 16);
+          ctx.lineTo(px + 16, py + 28);
+          ctx.lineTo(px + 36, py + 20);
+          ctx.stroke();
+          // Polished Brass curb with gold coin studs
+          ctx.fillStyle = "#d4af37";
+          ctx.fillRect(px, py, T, 10);
+          ctx.fillStyle = "#fff099";
+          ctx.fillRect(px, py, T, 2.5);
+          // Coin studs
+          ctx.fillStyle = "#f5cb4a";
+          ctx.beginPath();
+          ctx.arc(px + 12, py + 5, 3, 0, Math.PI * 2);
+          ctx.arc(px + 32, py + 5, 3, 0, Math.PI * 2);
+          ctx.fill();
+        } else if (tKey === "jardin") {
+          // Fresh Green Garden Lawn Turf with Terracotta Stepping Paver Stones
+          ctx.fillStyle = "#438c35";
+          ctx.fillRect(px, py, T, T);
+          // Lighter turf patches
+          ctx.fillStyle = "#5ca84a";
+          ctx.fillRect(px + 2, py + 14, 20, 12);
+          ctx.fillRect(px + 24, py + 18, 18, 14);
+          // Terracotta paver slab
+          ctx.fillStyle = "#d97c55";
+          round(ctx, px + 8, py + 18, 26, 14, 4);
+          ctx.fill();
+          // Fresh lawn curb with blooming daisy sprigs
+          ctx.fillStyle = "#2d6924";
+          ctx.fillRect(px, py, T, 8);
+          ctx.fillStyle = "#74bf56";
+          ctx.fillRect(px, py, T, 3);
+          // Tiny flowers on curb
+          ctx.fillStyle = "#ffffff";
+          ctx.beginPath();
+          ctx.arc(px + 14, py + 4, 2.5, 0, Math.PI * 2);
+          ctx.arc(px + 34, py + 4, 2.5, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = "#ffd54f";
+          ctx.fillRect(px + 13, py + 3, 2, 2);
+          ctx.fillRect(px + 33, py + 3, 2, 2);
+        } else if (tKey === "europa") {
+          // High-Tech Midnight Cobalt Slate Tiles with Glowing Cyan Lightline Trim
+          ctx.fillStyle = "#142c4b";
+          ctx.fillRect(px, py, T, T);
+          ctx.fillStyle = "#1d3e69";
+          ctx.fillRect(px + 2, py + 12, 19, 14);
+          ctx.fillRect(px + 23, py + 12, 19, 14);
+          // Glowing cyan LED border line
+          ctx.fillStyle = "#00e5ff";
+          ctx.fillRect(px, py, T, 4);
+          ctx.fillStyle = "#e2f8ff";
+          ctx.fillRect(px, py, T, 1.5);
+          // Golden star rivets
+          drawStar(ctx, px + 12, py + 7, 5, 3, 1.5, "#ffd54f");
+          drawStar(ctx, px + 32, py + 7, 5, 3, 1.5, "#ffd54f");
+        } else if (tKey === "sello") {
+          // Antique Simancas Dark Slate Flagstones with Mortar & Crimson Wax Drops
+          ctx.fillStyle = "#2c2536";
+          ctx.fillRect(px, py, T, T);
+          ctx.fillStyle = "#3c3349";
+          ctx.fillRect(px + 2, py + 12, 19, 14);
+          ctx.fillRect(px + 23, py + 12, 19, 14);
+          ctx.strokeStyle = "#1a1622";
+          ctx.lineWidth = 1.5;
+          ctx.strokeRect(px + 1, py + 11, 20, 15);
+          ctx.strokeRect(px + 22, py + 11, 20, 15);
+          // Dark gothic stone curb
+          ctx.fillStyle = "#4a3f57";
+          ctx.fillRect(px, py, T, 9);
+          // Dropped red wax seal mark
+          ctx.fillStyle = "#a82a30";
+          ctx.beginPath();
+          ctx.arc(px + 20, py + 5, 3, 0, Math.PI * 2);
+          ctx.fill();
+        } else if (tKey === "campus") {
+          // Madrid Red Brick Herringbone Pavers with White Granite Curb
+          ctx.fillStyle = "#8f3020";
+          ctx.fillRect(px, py, T, T);
+          // Brick pattern
+          ctx.fillStyle = "#a83a27";
+          ctx.fillRect(px + 2, py + 12, 19, 10);
+          ctx.fillRect(px + 23, py + 12, 19, 10);
+          ctx.fillRect(px + 12, py + 24, 20, 10);
+          // White Madrid Granite Curb
+          ctx.fillStyle = "#eee6d6";
+          ctx.fillRect(px, py, T, 10);
+          ctx.fillStyle = "#ffffff";
+          ctx.fillRect(px, py, T, 2.5);
+        } else if (tKey === "carta") {
+          // Salamanca Sandstone Slabs with Royal Crimson Velvet Border Carpet
+          ctx.fillStyle = "#cebb94";
+          ctx.fillRect(px, py, T, T);
+          ctx.fillStyle = "#ded0b0";
+          ctx.fillRect(px + 2, py + 12, 40, 24);
+          // Crimson Velvet Runner
+          ctx.fillStyle = "#b82626";
+          ctx.fillRect(px, py, T, 10);
+          ctx.fillStyle = "#e5b452";
+          ctx.fillRect(px, py + 8, T, 2);
         } else {
-          // Fallback solid stone fill
+          // Madrid Granite Cobblestone Standard
           ctx.fillStyle = theme.ground;
           ctx.fillRect(px, py, T, T);
-          ctx.fillStyle = "rgba(255,255,255,0.22)";
-          ctx.fillRect(px + 2, py + 18, 20, 11);
-          ctx.fillRect(px + 26, py + 18, 20, 11);
-          ctx.fillRect(px + 12, py + 32, 22, 12);
-          ctx.strokeStyle = "rgba(45,30,20,0.18)";
-          ctx.lineWidth = 1;
-          ctx.strokeRect(px + 1, py + 17, 22, 13);
-          ctx.strokeRect(px + 25, py + 17, 22, 13);
-          ctx.strokeRect(px + 11, py + 31, 24, 14);
+          ctx.fillStyle = theme.top;
+          ctx.fillRect(px, py, T, 12);
+          ctx.fillStyle = theme.topHighlight;
+          ctx.fillRect(px, py, T, 3);
         }
-
-        // Madrid polished granite curb slab (Bordillo de granito pulido)
-        ctx.fillStyle = theme.top;
-        ctx.fillRect(px, py, T, 12);
-
-        // Highlighted beveled top edge
-        ctx.fillStyle = theme.topHighlight;
-        ctx.fillRect(px, py, T, 3);
-
-        // Ambient contact shadow under curb
-        ctx.fillStyle = "rgba(0,0,0,0.22)";
-        ctx.fillRect(px, py + 12, T, 3);
-
-        // Vertical curb joints
-        ctx.fillStyle = "rgba(0,0,0,0.25)";
-        ctx.fillRect(px + 23, py, 1.5, 12);
       } else {
-        // Deep foundational ashlar masonry (Sillares de cantería maciza)
-        if (stoneImg) {
-          const sx = Math.abs((x + 5) * 96) % (stoneImg.naturalWidth ? stoneImg.naturalWidth - 96 : 928);
-          const sy = Math.abs((y + 3) * 96) % (stoneImg.naturalHeight ? stoneImg.naturalHeight - 96 : 928);
-          ctx.drawImage(stoneImg, sx, sy, 96, 96, px, py, T, T);
-          // Foundation underground darkening
-          ctx.fillStyle = "rgba(25, 18, 14, 0.38)";
+        // Sub-ground foundational masonry
+        if (tKey === "hacienda") {
+          ctx.fillStyle = "#08241b";
           ctx.fillRect(px, py, T, T);
+          ctx.fillStyle = "#0c3326";
+          ctx.fillRect(px + 1, py + 1, T - 2, T - 2);
+        } else if (tKey === "jardin") {
+          ctx.fillStyle = "#302419";
+          ctx.fillRect(px, py, T, T);
+          ctx.fillStyle = "#423223";
+          ctx.fillRect(px + 1, py + 1, T - 2, T - 2);
+        } else if (tKey === "europa") {
+          ctx.fillStyle = "#0a192b";
+          ctx.fillRect(px, py, T, T);
+          ctx.fillStyle = "#122a46";
+          ctx.fillRect(px + 1, py + 1, T - 2, T - 2);
+        } else if (tKey === "sello") {
+          ctx.fillStyle = "#1a1520";
+          ctx.fillRect(px, py, T, T);
+          ctx.fillStyle = "#261f2e";
+          ctx.fillRect(px + 1, py + 1, T - 2, T - 2);
         } else {
           ctx.fillStyle = theme.groundShadow;
           ctx.fillRect(px, py, T, T);
           ctx.fillStyle = theme.ground;
           ctx.fillRect(px + 1, py + 1, T - 2, T - 2);
         }
-
-        // Stone block border joints
-        ctx.strokeStyle = "rgba(0,0,0,0.22)";
-        ctx.lineWidth = 1;
-        ctx.strokeRect(px + 0.5, py + 0.5, T, T);
-
-        // Alternating masonry vertical seam
-        const row = y % 2;
-        const seamX = row === 0 ? px + 24 : px + 12;
-        ctx.fillStyle = "rgba(0,0,0,0.25)";
-        ctx.fillRect(seamX, py, 1.5, T);
       }
     }
   }
@@ -1765,28 +2334,310 @@ function drawBoss(ctx: CanvasRenderingContext2D, run: Run, item: Ent, theme: The
 function drawDeco(ctx: CanvasRenderingContext2D, item: Ent, theme: Theme, time: number) {
   ctx.save();
   ctx.translate(item.x, item.y);
-  if (item.ref === "lamp") {
+
+  if (item.ref === "vault_safe") {
+    // Heavy Bank Treasury Safe
+    ctx.fillStyle = "#163a2c";
+    round(ctx, 4, 12, 34, 46, 6);
+    ctx.fill();
+    ctx.strokeStyle = "#e5b452";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    // Dial
+    ctx.fillStyle = "#f5cb4a";
+    ctx.beginPath();
+    ctx.arc(21, 35, 10, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#0c231a";
+    ctx.beginPath();
+    ctx.arc(21, 35, 4, 0, Math.PI * 2);
+    ctx.fill();
+  } else if (item.ref === "gold_stack") {
+    // Stack of 3 Gold Bullion Bars with Coins
+    ctx.fillStyle = "#f5cb4a";
+    ctx.fillRect(4, 44, 34, 14);
+    ctx.fillStyle = "#ffd966";
+    ctx.fillRect(6, 45, 30, 3);
+    ctx.fillStyle = "#e5b452";
+    ctx.fillRect(10, 30, 22, 14);
+    ctx.fillStyle = "#ffe480";
+    ctx.fillRect(12, 31, 18, 3);
+    // Gold coins around
+    ctx.fillStyle = "#ffd966";
+    ctx.beginPath();
+    ctx.arc(6, 56, 4, 0, Math.PI * 2);
+    ctx.arc(36, 56, 4, 0, Math.PI * 2);
+    ctx.fill();
+  } else if (item.ref === "balance_scale") {
+    // Bronze Balance Scale of Budget Justice
+    ctx.fillStyle = "#d4af37";
+    ctx.fillRect(19, 10, 4, 48);
+    ctx.fillRect(10, 56, 22, 4);
+    ctx.fillRect(4, 18, 34, 3);
+    // Pans
+    ctx.fillStyle = "#f5cb4a";
+    ctx.beginPath();
+    ctx.arc(8, 30, 7, 0, Math.PI);
+    ctx.arc(34, 30, 7, 0, Math.PI);
+    ctx.fill();
+  } else if (item.ref === "ledger_book") {
+    // PGE Leather Budget Ledger
+    ctx.fillStyle = "#2a1c12";
+    ctx.fillRect(6, 22, 30, 36);
+    ctx.fillStyle = "#e5b452";
+    ctx.fillRect(6, 22, 30, 4);
+    ctx.fillRect(6, 54, 30, 4);
+    ctx.fillStyle = "#fffcf0";
+    ctx.fillRect(9, 26, 24, 28);
+    ctx.fillStyle = "#c43328"; // Red bookmark ribbon
+    ctx.fillRect(19, 24, 4, 32);
+  } else if (item.ref === "brass_lamp") {
+    // Green Glass Banker Lamp on Brass Stem
+    ctx.fillStyle = "#d4af37";
+    ctx.fillRect(19, 24, 4, 34);
+    ctx.fillRect(12, 56, 18, 4);
+    // Green glass shade
+    ctx.fillStyle = "#186338";
+    round(ctx, 6, 16, 30, 12, 6);
+    ctx.fill();
+    // Warm light
+    const glow = ctx.createRadialGradient(21, 26, 2, 21, 26, 16);
+    glow.addColorStop(0, "rgba(255, 245, 160, 0.95)");
+    glow.addColorStop(1, "rgba(255, 215, 80, 0)");
+    ctx.fillStyle = glow;
+    ctx.beginPath();
+    ctx.arc(21, 26, 16, 0, Math.PI * 2);
+    ctx.fill();
+  } else if (item.ref === "solar_panel") {
+    // Photovoltaic Solar Panel
+    ctx.fillStyle = "#8a9ba8";
+    ctx.fillRect(18, 34, 6, 24);
+    ctx.fillStyle = "#1e4c73";
+    ctx.beginPath();
+    ctx.moveTo(4, 34);
+    ctx.lineTo(16, 12);
+    ctx.lineTo(38, 12);
+    ctx.lineTo(26, 34);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = "#80d0ff";
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+  } else if (item.ref === "sdg_banner") {
+    // Agenda 2030 Rainbow Banner Totem
+    ctx.fillStyle = "#4a3c30";
+    ctx.fillRect(19, 4, 4, 54);
+    const rCols = ["#e5243b", "#dda63a", "#4c9f38", "#c5192d", "#ff3a21", "#26bde2", "#fcc30b", "#a21942", "#dd1367"];
+    for (let c = 0; c < rCols.length; c++) {
+      ctx.fillStyle = rCols[c];
+      ctx.fillRect(23, 6 + c * 5, 14, 5);
+    }
+  } else if (item.ref === "equality_ribbon") {
+    // Gender Equality Violet Ribbon Monument
+    ctx.fillStyle = "#ece6d8";
+    round(ctx, 10, 48, 22, 12, 3);
+    ctx.fill();
+    ctx.fillStyle = "#783c84"; // Equality Purple
+    ctx.beginPath();
+    ctx.arc(21, 24, 12, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#ffffff";
+    ctx.beginPath();
+    ctx.arc(21, 24, 6, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#783c84";
+    ctx.fillRect(14, 28, 6, 18);
+    ctx.fillRect(22, 28, 6, 18);
+  } else if (item.ref === "eco_planter") {
+    // Modern Cedar Planter with Flowers
+    ctx.fillStyle = "#8c5a36";
+    round(ctx, 4, 38, 34, 20, 4);
+    ctx.fill();
+    ctx.fillStyle = "#3c8a4c"; // Leaves
+    ctx.beginPath();
+    ctx.arc(14, 34, 10, 0, Math.PI * 2);
+    ctx.arc(28, 34, 10, 0, Math.PI * 2);
+    ctx.fill();
+    // Colorful flowers
+    ctx.fillStyle = "#ff69b4";
+    ctx.beginPath(); ctx.arc(14, 32, 4, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "#ffd700";
+    ctx.beginPath(); ctx.arc(28, 32, 4, 0, Math.PI * 2); ctx.fill();
+  } else if (item.ref === "green_tree") {
+    // Lush Blooming Tree
+    ctx.fillStyle = "#5c3d28";
+    ctx.fillRect(17, 30, 8, 32);
+    ctx.fillStyle = "#3a8542";
+    ctx.beginPath();
+    ctx.arc(21, 18, 20, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#56aa5e";
+    ctx.beginPath();
+    ctx.arc(16, 14, 15, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#ff94c2"; // Flower buds
+    ctx.fillRect(14, 12, 3, 3);
+    ctx.fillRect(26, 16, 3, 3);
+  } else if (item.ref === "eu_flag") {
+    // European Flag on Chrome Pole
+    ctx.fillStyle = "#9cb2c7";
+    ctx.fillRect(10, 0, 3, 58);
+    ctx.fillStyle = "#0c3066";
+    ctx.fillRect(13, 4, 26, 17);
+    drawStar(ctx, 26, 12, 5, 4, 2, "#ffd54f");
+  } else if (item.ref === "euro_pillar") {
+    // Chrome Pillar with Glowing Euro
+    ctx.fillStyle = "#8a9fb5";
+    ctx.fillRect(16, 18, 10, 42);
+    ctx.fillRect(10, 56, 22, 4);
+    ctx.fillStyle = "#ffd54f";
+    ctx.beginPath();
+    ctx.arc(21, 12, 10, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#0c284d";
+    ctx.font = "bold 12px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("€", 21, 16);
+  } else if (item.ref === "eu_terminal") {
+    // Glowing Blue EUR-Lex Terminal
+    ctx.fillStyle = "#1a3352";
+    round(ctx, 6, 18, 30, 38, 4);
+    ctx.fill();
+    ctx.fillStyle = "#00e5ff";
+    ctx.fillRect(9, 22, 24, 18);
+    ctx.fillStyle = "#10233b";
+    ctx.fillRect(12, 26, 18, 2);
+    ctx.fillRect(12, 30, 14, 2);
+  } else if (item.ref === "treaty_pedestal") {
+    // White Marble Pedestal with European Treaty
+    ctx.fillStyle = "#edf2f7";
+    round(ctx, 8, 28, 26, 32, 3);
+    ctx.fill();
+    ctx.fillStyle = "#ffd54f";
+    ctx.fillRect(10, 16, 22, 12);
+  } else if (item.ref === "wax_seal_post") {
+    // Stone Pillar with Red Wax Seal
+    ctx.fillStyle = "#3e3748";
+    ctx.fillRect(15, 10, 12, 50);
+    ctx.fillStyle = "#9e252a";
+    ctx.beginPath();
+    ctx.arc(21, 20, 10, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#ffd54f";
+    ctx.beginPath();
+    ctx.arc(21, 20, 5, 0, Math.PI * 2);
+    ctx.fill();
+  } else if (item.ref === "quill_inkpot") {
+    // Giant Inkpot with White Feather Quill
+    ctx.fillStyle = "#221c2b";
+    round(ctx, 12, 38, 18, 20, 5);
+    ctx.fill();
+    ctx.fillStyle = "#f5f0e6"; // Quill
+    ctx.beginPath();
+    ctx.moveTo(21, 40);
+    ctx.lineTo(34, 6);
+    ctx.lineTo(26, 16);
+    ctx.closePath();
+    ctx.fill();
+  } else if (item.ref === "archive_tome") {
+    // Ancient Legal Codex
+    ctx.fillStyle = "#4a2d1f";
+    ctx.fillRect(8, 20, 26, 38);
+    ctx.fillStyle = "#d4af37";
+    ctx.fillRect(10, 24, 22, 4);
+    ctx.fillRect(10, 50, 22, 4);
+  } else if (item.ref === "iron_torch") {
+    // Castle Iron Torch with Flame
+    ctx.fillStyle = "#221e28";
+    ctx.fillRect(19, 24, 4, 34);
+    ctx.fillRect(16, 20, 10, 6);
+    const flicker = Math.sin(time * 10) * 2;
+    ctx.fillStyle = "#ff8c1a";
+    ctx.beginPath();
+    ctx.arc(21, 14 + flicker, 8, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#ffe640";
+    ctx.beginPath();
+    ctx.arc(21, 15 + flicker, 4, 0, Math.PI * 2);
+    ctx.fill();
+  } else if (item.ref === "inap_laurel") {
+    // INAP Laurel Column
+    ctx.fillStyle = "#ede6db";
+    ctx.fillRect(14, 14, 14, 46);
+    ctx.fillStyle = "#d4af37";
+    ctx.beginPath();
+    ctx.arc(21, 14, 9, 0, Math.PI * 2);
+    ctx.fill();
+  } else if (item.ref === "bulletin_board") {
+    // OEP Gazette Noticeboard
+    ctx.fillStyle = "#5c3d28";
+    ctx.fillRect(8, 12, 4, 48);
+    ctx.fillRect(30, 12, 4, 48);
+    ctx.fillStyle = "#eedcba";
+    ctx.fillRect(10, 16, 22, 28);
+    ctx.fillStyle = "#c43328";
+    ctx.fillRect(12, 18, 18, 3);
+  } else if (item.ref === "clock_post") {
+    // Clock Post showing 10:10
+    ctx.fillStyle = "#2c2825";
+    ctx.fillRect(19, 20, 4, 40);
+    ctx.fillStyle = "#ffffff";
+    ctx.beginPath();
+    ctx.arc(21, 14, 10, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = "#22140d";
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(21, 14); ctx.lineTo(17, 9);
+    ctx.moveTo(21, 14); ctx.lineTo(26, 9);
+    ctx.stroke();
+  } else if (item.ref === "lion_statue") {
+    // Congreso Bronze Lion
+    ctx.fillStyle = "#7a5833";
+    round(ctx, 6, 26, 30, 32, 6);
+    ctx.fill();
+    ctx.fillStyle = "#946f45";
+    ctx.beginPath();
+    ctx.arc(16, 22, 10, 0, Math.PI * 2);
+    ctx.fill();
+  } else if (item.ref === "ce_column") {
+    // Classical Corinthian Column
+    ctx.fillStyle = "#f7eee1";
+    ctx.fillRect(16, 8, 10, 50);
+    ctx.fillStyle = "#e2d2bd";
+    ctx.fillRect(12, 0, 18, 8);
+    ctx.fillRect(12, 58, 18, 6);
+  } else if (item.ref === "spanish_flag") {
+    // Spanish Flag on Brass Pole
+    ctx.fillStyle = "#d4af37";
+    ctx.fillRect(10, 0, 3, 58);
+    ctx.fillStyle = "#c43328";
+    ctx.fillRect(13, 4, 26, 17);
+    ctx.fillStyle = "#f3bf2e";
+    ctx.fillRect(13, 8, 26, 9);
+  } else if (item.ref === "pediment_monument") {
+    // Magna Carta 1978 Monument
+    ctx.fillStyle = "#ede6db";
+    ctx.fillRect(6, 20, 30, 38);
+    ctx.fillStyle = "#d4af37";
+    ctx.font = "bold 9px Georgia";
+    ctx.textAlign = "center";
+    ctx.fillText("1978", 21, 38);
+  } else if (item.ref === "lamp" || item.ref === "fernandina_lamp") {
     // Madrid 3-Globe Fernandina Cast-Iron Streetlamp
-    // Iron post
     ctx.fillStyle = "#2c2825";
     ctx.fillRect(13, 20, 5, 42);
     ctx.fillRect(9, 58, 13, 6);
 
-    // Decorative bracket arms
     ctx.beginPath();
     ctx.arc(15, 24, 12, Math.PI, Math.PI * 2);
     ctx.strokeStyle = "#2c2825";
     ctx.lineWidth = 3;
     ctx.stroke();
 
-    // 3 Golden Lanterns with radiant light cones
-    const lamps = [
-      { x: 3, y: 16 },
-      { x: 15, y: 10 },
-      { x: 27, y: 16 },
-    ];
+    const lamps = [{ x: 3, y: 16 }, { x: 15, y: 10 }, { x: 27, y: 16 }];
     for (const l of lamps) {
-      // Warm light bloom
       const glow = ctx.createRadialGradient(l.x, l.y, 2, l.x, l.y, 18);
       glow.addColorStop(0, "rgba(255, 245, 180, 0.9)");
       glow.addColorStop(0.5, "rgba(255, 210, 100, 0.45)");
@@ -1796,33 +2647,23 @@ function drawDeco(ctx: CanvasRenderingContext2D, item: Ent, theme: Theme, time: 
       ctx.arc(l.x, l.y, 18, 0, Math.PI * 2);
       ctx.fill();
 
-      // Glass globe
       ctx.fillStyle = "#ffffff";
       ctx.beginPath();
       ctx.arc(l.x, l.y, 5, 0, Math.PI * 2);
       ctx.fill();
     }
   } else if (item.ref === "tree") {
-    // Madrid Park Chestnut / Plane Tree
     ctx.fillStyle = "#5c3d28";
     ctx.fillRect(13, 30, 8, 32);
-
-    // Layered lush leafy foliage
     ctx.fillStyle = theme.hill;
     ctx.beginPath();
     ctx.arc(17, 18, 22, 0, Math.PI * 2);
     ctx.fill();
-
     ctx.fillStyle = "#4a7838";
     ctx.beginPath();
     ctx.arc(14, 14, 18, 0, Math.PI * 2);
     ctx.fill();
-    ctx.fillStyle = "#6ca04b";
-    ctx.beginPath();
-    ctx.arc(19, 11, 14, 0, Math.PI * 2);
-    ctx.fill();
   } else if (item.ref === "banner") {
-    // Madrid Festival / Convocatoria Banner
     ctx.fillStyle = "#3a2a22";
     ctx.fillRect(6, 0, 3, 58);
     ctx.fillStyle = theme.accent;
@@ -1833,43 +2674,13 @@ function drawDeco(ctx: CanvasRenderingContext2D, item: Ent, theme: Theme, time: 
     ctx.fill();
     ctx.fillStyle = theme.accentGold;
     ctx.fillRect(9, 14, 18, 3);
-  } else if (item.ref === "fountain") {
-    // Classical Stone Plaza Fountain
-    ctx.fillStyle = "#dcd2be";
-    round(ctx, 8, 36, 74, 28, 12);
-    ctx.fill();
-    ctx.strokeStyle = "#8d7c67";
-    ctx.lineWidth = 2;
-    ctx.stroke();
-
-    // Water pool
-    ctx.fillStyle = "#6bb0d8";
-    ctx.beginPath();
-    ctx.ellipse(45, 46, 26, 9, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Animated water jet
-    ctx.strokeStyle = "rgba(255,255,255,0.75)";
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.arc(45, 22, 10 + Math.sin(time * 5) * 2.5, 0, Math.PI);
-    ctx.stroke();
-  } else if (item.ref === "column") {
-    // Classical Fluted Marble Column
-    ctx.fillStyle = "#f7eee1";
-    ctx.fillRect(16, 8, 16, 62);
-    ctx.fillStyle = "#e2d2bd";
-    ctx.fillRect(8, 0, 32, 10);
-    ctx.fillRect(8, 62, 32, 8);
-    ctx.fillStyle = "#cfbeaa";
-    ctx.fillRect(20, 10, 3, 50);
-    ctx.fillRect(26, 10, 3, 50);
   } else {
     ctx.fillStyle = theme.accent;
     ctx.fillRect(8, 20, 22, 28);
     ctx.fillStyle = theme.top;
     ctx.fillRect(12, 24, 14, 4);
   }
+
   ctx.restore();
 }
 

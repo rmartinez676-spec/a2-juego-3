@@ -276,6 +276,17 @@ export function startHub(difficulty: Difficulty): Run {
   return run;
 }
 
+export const DECOS_BY_THEME: Record<string, string[]> = {
+  hacienda: ["vault_safe", "gold_stack", "balance_scale", "ledger_book", "brass_lamp"],
+  jardin: ["solar_panel", "sdg_banner", "equality_ribbon", "eco_planter", "green_tree"],
+  europa: ["eu_flag", "euro_pillar", "eu_terminal", "treaty_pedestal"],
+  sello: ["wax_seal_post", "quill_inkpot", "archive_tome", "iron_torch"],
+  campus: ["inap_laurel", "bulletin_board", "clock_post", "fernandina_lamp"],
+  carta: ["lion_statue", "ce_column", "spanish_flag", "pediment_monument"],
+  examen: ["laurel_podium", "roman_eagle", "brazier", "exam_desk"],
+  plaza: ["tree", "lamp", "banner", "book"],
+};
+
 export function startMap(worldId: string, difficulty: Difficulty): Run {
   const world = WORLDS.find((item) => item.id === worldId) ?? WORLDS[1];
   const topics = topicsOfBlock(world.block ?? 1);
@@ -305,10 +316,14 @@ export function startMap(worldId: string, difficulty: Difficulty): Run {
   }
 
   const id = () => run.nextId++;
+  const mapDecos = DECOS_BY_THEME[world.theme] ?? ["tree", "lamp", "banner"];
   nodes.forEach((node, index) => {
     const x = (4 + index * 6) * T;
     run.entities.push(ent({ kind: "portal", x, y: 11 * T - 136, w: 116, h: 136, ref: node.id, label: node.label, variant: index }, id));
-    if (index % 2 === 0) run.entities.push(ent({ kind: "deco", x: x + 130, y: 11 * T - 64, w: 40, h: 64, ref: "tree", variant: index }, id));
+    if (index % 2 === 0) {
+      const decoRef = mapDecos[Math.floor(index / 2) % mapDecos.length];
+      run.entities.push(ent({ kind: "deco", x: x + 130, y: 11 * T - 64, w: 42, h: 64, ref: decoRef, variant: index }, id));
+    }
   });
   run.player.x = 70;
   run.player.y = 11 * T - run.player.h;
@@ -411,9 +426,11 @@ export function startStage(topicId: string, attempt: number, difficulty: Difficu
     run.entities.push(ent({ kind: "spring", x: Math.floor(W * 0.62) * T, y: ground * T - 22, w: 40, h: 22, label: "Salto" }, id));
   }
 
-  for (let i = 0; i < 8; i++) {
+  const stageDecos = DECOS_BY_THEME[world.theme] ?? ["tree", "lamp", "banner", "book"];
+  for (let i = 0; i < 9; i++) {
     const tx = 3 + Math.floor(random() * (W - 6));
-    run.entities.push(ent({ kind: "deco", x: tx * T, y: ground * T - 58, w: 34, h: 58, ref: ["tree", "lamp", "banner", "book"][i % 4], variant: i }, id));
+    const decoRef = stageDecos[i % stageDecos.length];
+    run.entities.push(ent({ kind: "deco", x: tx * T, y: ground * T - 64, w: 42, h: 64, ref: decoRef, variant: i }, id));
   }
   run.flagX = (W - 3) * T;
   run.entities.push(ent({ kind: "flag", x: run.flagX, y: ground * T - 96, w: 36, h: 96, label: "Meta" }, id));
