@@ -14,6 +14,7 @@ import {
   offerNpcQuiz,
   resolveQuiz,
   startBoss,
+  startCasoHall,
   startHall,
   startHub,
   startMap,
@@ -85,7 +86,7 @@ export default function GameApp() {
   const ready = useSyncExternalStore(emptySubscribe, () => true, () => false);
   const [tick, setTick] = useState(0);
   const [playerId, setPlayerId] = useState(() => (typeof window !== "undefined" ? loadId() : ""));
-  const [name, setName] = useState(() => (typeof window !== "undefined" ? window.localStorage.getItem("opos-name") || "Alba" : "Alba"));
+  const [name, setName] = useState(() => (typeof window !== "undefined" ? window.localStorage.getItem("opos-name") ?? "" : ""));
   const [difficulty, setDifficulty] = useState<Difficulty>(() => {
     if (typeof window === "undefined") return "gestor";
     const storedDiff = window.localStorage.getItem("opos-difficulty") as Difficulty | null;
@@ -469,7 +470,24 @@ export default function GameApp() {
     if (levelId.startsWith("map-")) launch(startMap(levelId.replace("map-", ""), difficulty));
     else if (levelId.endsWith("-boss")) launch(startBoss(levelId.replace("-boss", ""), difficulty));
     else if (levelId === "exam-hall") launch(startHall(difficulty));
-    else if (levelId === "exam") {
+    else if (levelId === "caso-hall") launch(startCasoHall(difficulty));
+    else if (levelId === "caso-direct" || levelId === "caso") {
+      audio.unlock();
+      setScreen("exam");
+      setExamPhase("caso");
+      setExamTotals({ correct: 0, wrong: 0, blank: 0, asked: 0 });
+      setSeconds(1800);
+      void fetch(`/api/questions?mode=caso&seed=${Date.now()}`).then(async (res) => {
+        const data = await res.json();
+        if (data.caso) {
+          setCaso(data.caso);
+          setQuestions(data.caso.questions);
+          setQi(0);
+          setPicked(null);
+          setTally({ correct: 0, wrong: 0, blank: 0, ids: [] });
+        }
+      }).catch(() => setExamPhase("done"));
+    } else if (levelId === "exam") {
       setScreen("exam");
       setExamPhase("intro");
     } else launch(startStage(levelId, attempts, difficulty));
@@ -553,14 +571,14 @@ export default function GameApp() {
             <ChromaImg
               src={titlePose === "study" ? SPRITES.walk : SPRITES.cheer}
               className={`alba ${titlePose === "cheer" ? "is-cheer" : "is-walk"}`}
-              alt={titlePose === "study" ? "Alba, opositora pelirroja con apuntes de Gestión del Estado" : "Alba celebrando su plaza aprobada en el INAP"}
+              alt={titlePose === "study" ? (name.trim() ? `${name.trim()} con apuntes de Gestión del Estado` : "Opositor/a con apuntes de Gestión del Estado") : (name.trim() ? `${name.trim()} celebrando su plaza aprobada en el INAP` : "Celebrando la plaza aprobada en el INAP")}
             />
             <div className="pose-toggle">
               <button
                 type="button"
                 className={`pose-btn ${titlePose === "study" ? "active" : ""}`}
                 onClick={() => setTitlePose("study")}
-                title="Ver a Alba de camino a la biblioteca con sus libros"
+                title="Ver modo estudio con libros y apuntes"
               >
                 🎒 Modo Estudio
               </button>
@@ -568,7 +586,7 @@ export default function GameApp() {
                 type="button"
                 className={`pose-btn ${titlePose === "cheer" ? "active" : ""}`}
                 onClick={() => setTitlePose("cheer")}
-                title="Ver a Alba celebrando su plaza aprobada"
+                title="Ver celebración de la plaza aprobada"
               >
                 🏆 ¡Aprobada!
               </button>
@@ -583,9 +601,9 @@ export default function GameApp() {
             <div className="opos-header">
               <span className="badge-official">📋 CONVOCATORIA OFICIAL BOE · AGE</span>
               <p className="kicker">Sede Central del INAP · Calle Atocha</p>
-              <h1>Alba y los 58 temas</h1>
+              <h1>{name.trim() ? `${name.trim()} y los 58 temas` : "Oposición y los 58 temas"}</h1>
               <p className="lede">
-                Plataformas de repaso interactivo del temario de Gestión Civil (A2). Recorre los 6 bloques normativos, desafía a los tribunales de cada ministerio y supéralos con éxito.
+                Plataformas de repaso interactivo del temario de Gestión Civil (A2). Recorre los 6 bloques normativos, desafía a los tribunales de cada ministerio y supera tanto el test como los casos prácticos.
               </p>
             </div>
 
@@ -601,7 +619,7 @@ export default function GameApp() {
 
             <div className="input-group">
               <label className="fine" htmlFor="name">Nombre de la opositora / opositor</label>
-              <input id="name" className="name-input" value={name} maxLength={24} onChange={(event) => { setName(event.target.value); window.localStorage.setItem("opos-name", event.target.value); }} />
+              <input id="name" className="name-input" placeholder="Tu nombre (ej. Alba, Carlos, Laura...)" value={name} maxLength={24} onChange={(event) => { setName(event.target.value); window.localStorage.setItem("opos-name", event.target.value); }} />
             </div>
 
             <div className="diff-section">
@@ -683,8 +701,13 @@ export default function GameApp() {
               </button>
               <button className="ghost nav-card-btn highlight" onClick={() => { setScreen("exam"); setExamPhase("intro"); }}>
                 <span className="nav-icon">🏛️</span>
-                <strong>Simulacro Examen</strong>
+                <strong>1.ª Parte: Test General</strong>
                 <span>Tribunal Calificador A2</span>
+              </button>
+              <button className="ghost nav-card-btn highlight" onClick={() => enter("caso-direct")}>
+                <span className="nav-icon">⚖️</span>
+                <strong>2.ª Parte: Casos Prácticos</strong>
+                <span>Supuestos prácticos de gestión</span>
               </button>
             </div>
 
@@ -756,7 +779,7 @@ export default function GameApp() {
                   : "✨ ACCIÓN"}
               </button>
             )}
-            {overlay?.type === "dialogue" && <Dialogue pending={overlay} onQuiz={() => { const current = runRef.current; if (!current) return; if (overlay.topicId) offerNpcQuiz(current); else acceptDialogue(current); showPendingRef.current(current.pending); }} onClose={() => { const current = runRef.current; if (!current) return; acceptDialogue(current); shownRef.current = ""; setOverlay(null); }} />}
+            {overlay?.type === "dialogue" && <Dialogue pending={overlay} playerName={name} onQuiz={() => { const current = runRef.current; if (!current) return; if (overlay.topicId) offerNpcQuiz(current); else acceptDialogue(current); showPendingRef.current(current.pending); }} onClose={() => { const current = runRef.current; if (!current) return; acceptDialogue(current); shownRef.current = ""; setOverlay(null); }} />}
             {overlay?.type === "quiz" && (
               <Quiz
                 question={currentQuestion}
@@ -1027,7 +1050,7 @@ export default function GameApp() {
         <section className="panel">
           <header className="panel-head">
             <div>
-              <p className="kicker">Cuaderno de Alba</p>
+              <p className="kicker">{name.trim() ? `Cuaderno de ${name.trim()}` : "Cuaderno de Estudio"}</p>
               <h1>58 temas, seis bloques</h1>
             </div>
             <div className="row">
@@ -1209,9 +1232,13 @@ function Help() {
   );
 }
 
-function Dialogue({ pending, onQuiz, onClose }: { pending: Extract<Pending, { type: "dialogue" }>; onQuiz: () => void; onClose: () => void }) {
+function Dialogue({ pending, playerName, onQuiz, onClose }: { pending: Extract<Pending, { type: "dialogue" }>; playerName?: string; onQuiz: () => void; onClose: () => void }) {
   const topic = pending.topicId ? TOPIC_BY_ID.get(pending.topicId) : undefined;
   const npc = NPC_BY_ID.get(pending.npcId);
+  const targetName = playerName?.trim() || "Opositor/a";
+  const voiceText = topic
+    ? topic.voice.replace(/\bAlba\b/g, targetName)
+    : `Soy Pilar, del INAP. ¡Hola, ${targetName}! Corre la plaza, entra en cada ministerio y no dejes un bloque sin jefe. Al fondo tienes el examen test y los casos prácticos.`;
   return (
     <div className="overlay">
       <section className="sheet stack">
@@ -1222,7 +1249,7 @@ function Dialogue({ pending, onQuiz, onClose }: { pending: Extract<Pending, { ty
             <h2>{npc?.name}</h2>
           </div>
         </div>
-        <p>{topic ? topic.voice : "Soy Pilar, del INAP. Corre la plaza, entra en cada ministerio y no dejes un bloque sin jefe. El aula del fondo es el examen."}</p>
+        <p>{voiceText}</p>
         {topic && <ul className="points">{topic.points.map((point) => <li key={point}>{point}</li>)}</ul>}
         {topic && <p className="fine">{topic.trap}</p>}
         <div className="row">
@@ -1259,7 +1286,8 @@ function Quiz({ question, index, total, picked, showExplain, onPick, onNext }: {
 function labelFor(levelId: string) {
   if (levelId.startsWith("map-")) return WORLDS.find((world) => world.id === levelId.replace("map-", ""))?.blurb ?? "Un mundo del temario";
   if (levelId.endsWith("-boss")) return "El jefe pregunta de todo el bloque y suena otra música.";
-  if (levelId === "exam" || levelId === "exam-hall") return "El aula de la Comisión Permanente.";
+  if (levelId === "exam" || levelId === "exam-hall") return "1.ª Parte: Aula de la Comisión Permanente (Test General A2).";
+  if (levelId === "caso-hall" || levelId === "caso-direct" || levelId === "caso") return "2.ª Parte: Tribunal de Supuestos Prácticos (Casos A2 de Gestión).";
   return TOPIC_BY_ID.get(levelId)?.title ?? levelId;
 }
 

@@ -209,7 +209,7 @@ export function startHub(difficulty: Difficulty): Run {
     theme: "plaza",
     music: "hub",
     worldId: "hub",
-    W: 66,
+    W: 78,
     H: 14,
     difficulty,
   });
@@ -260,17 +260,31 @@ export function startHub(difficulty: Difficulty): Run {
         w: 116,
         h: 136,
         ref: isExam ? "exam-hall" : `map-${world.id}`,
-        label: isExam ? "Examen Oficial A2" : world.name,
+        label: isExam ? "1.ª Parte: Test General A2" : world.name,
         variant: index,
       }, id),
     );
   });
 
-  for (let i = 0; i < 9; i++) {
-    run.entities.push(ent({ kind: "deco", x: 80 + i * 340, y: 11 * T - 54, w: 28, h: 54, ref: i % 2 ? "banner" : "lamp", variant: i }, id));
+  // Palacio para la 2.ª parte del examen: Casos Prácticos
+  run.entities.push(
+    ent({
+      kind: "portal",
+      x: (23 + 7 * 6) * T,
+      y: 11 * T - 136,
+      w: 116,
+      h: 136,
+      ref: "caso-hall",
+      label: "2.ª Parte: Casos Prácticos",
+      variant: 7,
+    }, id),
+  );
+
+  for (let i = 0; i < 11; i++) {
+    run.entities.push(ent({ kind: "deco", x: 80 + i * 320, y: 11 * T - 54, w: 28, h: 54, ref: i % 2 ? "banner" : "lamp", variant: i }, id));
   }
-  run.toast = "Camina a la derecha. Cada edificio es un bloque del temario; el último es el Examen.";
-  run.toastT = 5.5;
+  run.toast = "Camina a la derecha: los 6 bloques, la 1.ª parte (Test) y la 2.ª parte (Casos Prácticos).";
+  run.toastT = 6;
   run.player.x = 90;
   run.player.y = 11 * T - run.player.h;
   return run;
@@ -527,6 +541,32 @@ export function startHall(difficulty: Difficulty): Run {
   return run;
 }
 
+export function startCasoHall(difficulty: Difficulty): Run {
+  const run = baseRun({
+    mode: "hall",
+    levelId: "caso-hall",
+    title: "Tribunal de Supuestos Prácticos",
+    subtitle: "2.ª Parte: Casos Prácticos de Gestión A2",
+    theme: "sello",
+    music: "exam",
+    worldId: "final",
+    W: 36,
+    H: 14,
+    difficulty,
+  });
+  setGround(run, 11);
+  const id = () => run.nextId++;
+  run.entities.push(ent({ kind: "npc", x: 520, y: 11 * T - 78, w: 46, h: 78, ref: "tribunal-caso", label: "Tribunal de Supuestos" }, id));
+  run.flagX = 30 * T;
+  run.entities.push(ent({ kind: "flag", x: run.flagX, y: 11 * T - 110, w: 48, h: 110, label: "Comenzar Supuesto Práctico", ref: "caso-direct" }, id));
+  for (let i = 0; i < 5; i++) run.entities.push(ent({ kind: "deco", x: 160 + i * 220, y: 11 * T - 70, w: 50, h: 70, ref: "archive_tome", variant: i }, id));
+  run.player.x = 80;
+  run.player.y = 11 * T - run.player.h;
+  run.toast = "Segunda prueba de la oposición: Supuestos prácticos desglosados (LPAC, Personal y Hacienda).";
+  run.toastT = 4.5;
+  return run;
+}
+
 function overlaps(a: { x: number; y: number; w: number; h: number }, b: { x: number; y: number; w: number; h: number }) {
   return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
 }
@@ -738,7 +778,7 @@ export function step(run: Run, dt: number, input: Input) {
 
   if (near) {
     const item = near.item;
-    if (item.kind === "flag") run.prompt = item.ref === "exam" ? "Entrar al examen" : "Llegar a la meta";
+    if (item.kind === "flag") run.prompt = item.ref === "exam" ? "Entrar al examen" : item.ref === "caso-direct" ? "Entrar al Supuesto Práctico" : "Llegar a la meta";
     else if (item.kind === "npc") run.prompt = `💬 Hablar con ${item.label}`;
     else if (item.kind === "qblock") run.prompt = "❓ Abrir el bloque ?";
     else if (item.kind === "boss") run.prompt = "⚔️ Rebatir al jefe";
@@ -747,6 +787,7 @@ export function step(run: Run, dt: number, input: Input) {
     const headHit = item.kind === "qblock" && body.vy < 0 && body.y < item.y + item.h && body.y + body.h > item.y && Math.abs(body.x - item.x) < 40;
     if (item.kind === "flag" && overlaps(body, { x: item.x - 10, y: item.y, w: item.w + 20, h: item.h })) {
       if (item.ref === "exam") openPending(run, { type: "enter", levelId: "exam" });
+      else if (item.ref === "caso-direct") openPending(run, { type: "enter", levelId: "caso-direct" });
       else if (run.mode === "stage" && !run.talked) openPending(run, { type: "confirm-exit" });
       else win(run);
       return;

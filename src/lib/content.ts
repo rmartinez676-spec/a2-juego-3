@@ -81,6 +81,7 @@ export const NPCS: NpcDef[] = [
   { id: "oro", name: "Tesorera Oro", role: "Tesorería del Estado", body: "#8a6a22", accent: "#f8efc8", hair: "#3a2a18", hat: "abacus" },
   { id: "luz", name: "Nominera Luz", role: "Nóminas de la AGE", body: "#b0893e", accent: "#fff6df", hair: "#6b3a2a", hat: "badge" },
   { id: "comisaria", name: "Comisaria Rivas", role: "Comisión Permanente de Selección", portrait: "/sprites/npc-comisaria.png", body: "#243044", accent: "#b23a48", hair: "#241820", hat: "clock" },
+  { id: "tribunal-caso", name: "Tribunal de Supuestos", role: "2.ª Prueba: Casos Prácticos A2", portrait: "/sprites/npc-sello.png", body: "#1a2c4e", accent: "#fcd34d", hair: "#2b211c", hat: "scales" },
   { id: "bit", name: "Bit", role: "Robot de bolsillo", body: "#d4654a", accent: "#f6efe2", hair: "#1b1a22", hat: "robot" },
 ];
 

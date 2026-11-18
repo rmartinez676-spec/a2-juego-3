@@ -185,7 +185,7 @@ export function drawRun(ctx: CanvasRenderingContext2D, run: Run, width: number, 
 
   // World layer
   ctx.setTransform(scale * dpr, 0, 0, scale * dpr, (-camX * scale + shake) * dpr, -camY * scale * dpr);
-  drawBackdrop(ctx, run, theme, camX, viewW, viewH, camY);
+  drawBackdrop(ctx, run, theme, camX, viewW, viewH, camY, groundY);
   drawTiles(ctx, run, theme, camX, viewW);
 
   // Entities behind player
@@ -274,6 +274,7 @@ function drawBackdrop(
   viewW: number,
   viewH: number,
   camY: number,
+  groundY: number = 11 * T,
 ) {
   // 1. Soft atmospheric photographic texture if image exists (blended behind skyline)
   const bgPath = BG_IMAGES[run.theme] ?? BG_IMAGES.madrid;
@@ -465,8 +466,8 @@ function drawBackdrop(
   ctx.fillStyle = theme.hill;
   wave(ctx, camX - 60, mountainBase + 34, viewW + 120, 130, 36, camX * 0.35 + 80);
 
-  // 7. Rich Thematic Architecture & Institutional Skyline per Block/World
-  drawSkyline(ctx, run.theme, theme, camX, camY + viewH - 170, viewW, run.time);
+  // 7. Rich Thematic Architecture & Institutional Skyline per Block/World (firmly anchored on the ground)
+  drawSkyline(ctx, run.theme, theme, camX, groundY, viewW, run.time);
 }
 
 function drawMountainRidge(
@@ -550,7 +551,7 @@ function drawSkyline(
   const start = Math.floor(camX / blockW) * blockW - blockW;
   for (let x = start; x < camX + viewW + blockW * 2; x += blockW) {
     const n = Math.abs(Math.floor(x / blockW));
-    const h = 75 + (n % 4) * 24 + ((n * 3) % 5) * 8;
+    const h = 180 + (n % 4) * 36 + ((n * 3) % 5) * 16;
     const px = x - camX * 0.42;
 
     ctx.save();
@@ -562,9 +563,9 @@ function drawSkyline(
       const goldTrim = "#d4af37";
       const goldBright = "#f5cb4a";
 
-      // Neoclassical Banker Facade
+      // Neoclassical Banker Facade (anchored deep into the ground)
       ctx.fillStyle = wallColor;
-      ctx.fillRect(8, 20, 104, h);
+      ctx.fillRect(8, 20, 104, h + 100);
 
       // Gold Entablature & Cornice
       ctx.fillStyle = goldTrim;
@@ -680,8 +681,8 @@ function drawSkyline(
       const greenPlant = "#3c8a4c";
       const glassCyan = "#7fd4e3";
 
-      // Modern Eco-Pavilion Body
-      round(ctx, 8, 16, 104, h + 10, 8);
+      // Modern Eco-Pavilion Body (anchored deep into the ground)
+      round(ctx, 8, 16, 104, h + 100, 8);
       ctx.fillStyle = wallColor;
       ctx.fill();
 
@@ -767,7 +768,7 @@ function drawSkyline(
     } else if (themeKey === "europa") {
       // 3. Archipiélago de las Doce Estrellas (Brussels & Strasbourg European Architecture)
       ctx.fillStyle = n % 2 ? "#183e68" : "#122f50";
-      round(ctx, 6, 12, 108, h + 20, 6);
+      round(ctx, 6, 12, 108, h + 100, 6);
       ctx.fill();
 
       // Reflective cyan glass curtain wall
@@ -795,7 +796,7 @@ function drawSkyline(
       // 4. Ciudad del Sello (Simancas Antique Granite Fortress & Machicolations)
       const stoneDark = n % 2 ? "#322b3d" : "#241f2c";
       ctx.fillStyle = stoneDark;
-      ctx.fillRect(8, 18, 104, h);
+      ctx.fillRect(8, 18, 104, h + 100);
 
       // Machicolations and crenellations on roof
       ctx.fillStyle = "#4a4058";
@@ -829,9 +830,9 @@ function drawSkyline(
       const brickRed = n % 2 ? "#8f3020" : "#a83a27";
       const stoneWhite = "#eee6d6";
 
-      // Red brick body
+      // Red brick body (anchored deep into the ground)
       ctx.fillStyle = brickRed;
-      ctx.fillRect(8, 20, 104, h);
+      ctx.fillRect(8, 20, 104, h + 100);
 
       // White granite horizontal bands
       ctx.fillStyle = stoneWhite;
@@ -885,7 +886,7 @@ function drawSkyline(
       // 6. Palacio de la Carta Magna (Congreso de los Diputados Neoclassical Marble)
       const marble = n % 2 ? "#fcf9f2" : "#efe6d5";
       ctx.fillStyle = marble;
-      ctx.fillRect(8, 20, 104, h);
+      ctx.fillRect(8, 20, 104, h + 100);
 
       // Classical entablature & pediment
       ctx.fillStyle = "#d6c1a0";
@@ -909,7 +910,7 @@ function drawSkyline(
       for (let c = 0; c < 4; c++) {
         const cx = 18 + c * 23;
         ctx.fillStyle = "#ffffff";
-        ctx.fillRect(cx, 20, 7, h - 20);
+        ctx.fillRect(cx, 20, 7, h + 80);
         ctx.fillStyle = "#d6c1a0";
         ctx.fillRect(cx - 2, 18, 11, 4);
       }
@@ -922,12 +923,12 @@ function drawSkyline(
       ctx.fillStyle = "#f3bf2e";
       ctx.fillRect(61, -34, 18, 5);
     } else {
-      // Default: Classical Madrid Skyline
+      // Default: Classical Madrid Skyline (anchored deep into the ground)
       const wallColor = n % 2 ? "#f4dfc3" : "#eed5b4";
       const trimColor = "#d6b58e";
 
       ctx.fillStyle = wallColor;
-      ctx.fillRect(8, 20, 104, h);
+      ctx.fillRect(8, 20, 104, h + 100);
       ctx.fillStyle = trimColor;
       ctx.fillRect(4, 14, 112, 8);
       ctx.fillRect(6, 6, 108, 6);
@@ -1563,11 +1564,13 @@ function drawBuilding(ctx: CanvasRenderingContext2D, item: Ent, theme: Theme, ti
   const h = item.h;
   const ref = item.ref;
   const isFinal = ref === "exam-hall" || ref.includes("final");
+  const isCaso = ref === "caso-hall" || ref.includes("caso");
   const isBoss = ref.includes("boss");
 
   // Determine architectural theme by block/subject
-  let arch: "carta" | "europa" | "jardin" | "sello" | "campus" | "hacienda" | "exam" | "boss" | "plaza" = "plaza";
+  let arch: "carta" | "europa" | "jardin" | "sello" | "campus" | "hacienda" | "exam" | "caso" | "boss" | "plaza" = "plaza";
   if (isBoss) arch = "boss";
+  else if (isCaso) arch = "caso";
   else if (isFinal) arch = "exam";
   else if (ref === "map-w1" || ref.startsWith("I-")) arch = "carta";
   else if (ref === "map-w2" || ref.startsWith("II-")) arch = "europa";
@@ -1626,6 +1629,12 @@ function drawBuilding(ctx: CanvasRenderingContext2D, item: Ent, theme: Theme, ti
     trimColor = "#ffffff";
     accentColor = "#ffd54f";
     goldColor = "#ffd54f";
+  } else if (arch === "caso") {
+    wallColor = "#1a2c4e";
+    shadowColor = "#0f1a2e";
+    trimColor = "#d4af37";
+    accentColor = "#2563eb";
+    goldColor = "#fcd34d";
   } else if (arch === "boss") {
     wallColor = "#201824";
     shadowColor = "#0f0b12";
@@ -1752,6 +1761,16 @@ function drawBuilding(ctx: CanvasRenderingContext2D, item: Ent, theme: Theme, ti
       ctx.beginPath();
       ctx.arc(10 * dir, 7, 3, 0, Math.PI * 2);
       ctx.fill();
+    } else if (arch === "caso") {
+      // Judicial Gold & Navy Pennant (Supuestos Prácticos A2)
+      ctx.fillStyle = "#1a2c4e";
+      ctx.fillRect(0, 0, 20 * dir, 14);
+      ctx.fillStyle = "#fcd34d";
+      ctx.fillRect(2 * dir, 2, 16 * dir, 10);
+      ctx.fillStyle = "#1a2c4e";
+      ctx.font = "bold 7px sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText("A2", 10 * dir, 9);
     } else {
       ctx.fillStyle = accentColor;
       ctx.beginPath();
@@ -1917,6 +1936,16 @@ function drawBuilding(ctx: CanvasRenderingContext2D, item: Ent, theme: Theme, ti
     ctx.font = "bold 13px Georgia";
     ctx.textAlign = "center";
     ctx.fillText("👑", w / 2, 4);
+  } else if (arch === "caso") {
+    // Tribunal de Supuestos Prácticos: Balanza de la Justicia
+    ctx.fillStyle = goldColor;
+    ctx.beginPath();
+    ctx.arc(w / 2, 0, 14, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#1a2c4e";
+    ctx.font = "bold 13px Georgia";
+    ctx.textAlign = "center";
+    ctx.fillText("⚖️", w / 2, 4);
   } else if (arch === "boss") {
     // Boss Skull & Spikes
     ctx.fillStyle = "#a62838";
@@ -2022,7 +2051,7 @@ function drawBuilding(ctx: CanvasRenderingContext2D, item: Ent, theme: Theme, ti
   ctx.fill();
 
   // Ceremonial Red Carpet rolling out through the gate
-  ctx.fillStyle = arch === "exam" ? "#7c1828" : "#b22e23";
+  ctx.fillStyle = arch === "exam" || arch === "caso" ? "#7c1828" : "#b22e23";
   ctx.beginPath();
   ctx.moveTo(gateX + 8, h - 14);
   ctx.lineTo(gateX + gateW - 8, h - 14);

@@ -18,8 +18,8 @@ const nunito = Nunito({
 });
 
 export const metadata: Metadata = {
-  title: "OPOS · Alba y los 58 temas",
-  description: "Plataformas de repaso para la oposición de Gestión de la Administración Civil del Estado, grupo A2.",
+  title: "OPOS · Repaso Oficial 58 Temas y Casos Prácticos · Gestión A2 AGE",
+  description: "Videojuego de plataformas de repaso para la oposición de Gestión de la Administración Civil del Estado (GACE A2) con test y casos prácticos.",
 };
 
 export const viewport: Viewport = {
