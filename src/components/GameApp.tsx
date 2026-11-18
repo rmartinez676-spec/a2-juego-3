@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { getNextLevel, NPC_BY_ID, TOPIC_BY_ID, TOPICS, WORLDS } from "@/lib/content";
 import { selectQuestions } from "@/lib/questions";
-import type { Difficulty, Question } from "@/lib/types";
+import type { Caso, Difficulty, Question } from "@/lib/types";
 import { DIFFICULTIES, EXAM_META } from "@/lib/types";
 import { audio } from "./game/audio";
 import { drawRun } from "./game/draw";
@@ -108,7 +108,7 @@ export default function GameApp() {
   const [picked, setPicked] = useState<number | null>(null);
   const [tally, setTally] = useState({ correct: 0, wrong: 0, blank: 0, ids: [] as string[] });
   const [examPhase, setExamPhase] = useState<"intro" | "test" | "caso" | "done">("intro");
-  const [caso, setCaso] = useState<{ title: string; story: string; questions: Question[] } | null>(null);
+  const [caso, setCaso] = useState<Caso | null>(null);
   const [seconds, setSeconds] = useState(0);
   const [examTotals, setExamTotals] = useState({ correct: 0, wrong: 0, blank: 0, asked: 0 });
   const [noteDraft, setNoteDraft] = useState("");
@@ -373,8 +373,8 @@ export default function GameApp() {
   }, []);
 
   const fetchQuestions = useCallback(async (topicIds: string[], count: number, levelId: string) => {
-    const seed = Date.now();
-    const exclude = readJson<string[]>("opos-seen", []).slice(0, 40).join(",");
+    const seed = Date.now() + Math.floor(Math.random() * 100000);
+    const exclude = readJson<string[]>("opos-seen", []).slice(0, 50).join(",");
     try {
       const res = await fetch(`/api/questions?topics=${topicIds.join(",")}&count=${count}&difficulty=${difficulty}&playerId=${playerId}&levelId=${levelId}&seed=${seed}&exclude=${exclude}`);
       const data = await res.json();
@@ -384,6 +384,24 @@ export default function GameApp() {
     }
     return selectQuestions({ topicIds, difficulty, count, seed, exclude: exclude.split(",").filter(Boolean) });
   }, [difficulty, playerId]);
+
+  function resetSeenQuestions() {
+    window.localStorage.removeItem("opos-seen");
+    window.localStorage.removeItem("opos-seen-casos");
+    alert("¡Ciclo de preguntas y casos reiniciado! Todas las preguntas y supuestos volverán a aparecer frescos.");
+  }
+
+  function resetAllProgress() {
+    if (window.confirm("¿Seguro que deseas reiniciar TODO tu progreso? Se borrarán las estrellas de los 58 temas, las notas y las preguntas vistas para empezar una oposición limpia.")) {
+      window.localStorage.removeItem("opos-progress");
+      window.localStorage.removeItem("opos-seen");
+      window.localStorage.removeItem("opos-seen-casos");
+      window.localStorage.removeItem("opos-notes");
+      setProgress({});
+      setNotes({});
+      alert("Progreso reiniciado por completo. ¡A por la plaza!");
+    }
+  }
 
   const beginQuiz = useCallback(async (pending: Extract<Pending, { type: "quiz" }>) => {
     const list = await fetchQuestions(pending.topicIds, pending.count, pending.levelId);
@@ -465,8 +483,28 @@ export default function GameApp() {
     setScreen("play");
   }
 
+  function loadCaso(excludeCurrent = true) {
+    const seenCasos = readJson<string[]>("opos-seen-casos", []);
+    const exclude = excludeCurrent && caso ? [...seenCasos, caso.id] : seenCasos;
+    const seed = Date.now() + Math.floor(Math.random() * 10000);
+    return fetch(`/api/questions?mode=caso&seed=${seed}&excludeCaso=${exclude.join(",")}`)
+      .then(async (res) => {
+        const data = await res.json();
+        if (data.caso) {
+          const nextSeen = [...seenCasos, data.caso.id];
+          window.localStorage.setItem("opos-seen-casos", JSON.stringify(nextSeen.slice(-15)));
+          setCaso(data.caso);
+          setQuestions(data.caso.questions);
+          setQi(0);
+          setPicked(null);
+          setTally({ correct: 0, wrong: 0, blank: 0, ids: [] });
+        }
+      })
+      .catch(() => setExamPhase("done"));
+  }
+
   function enter(levelId: string) {
-    const attempts = (progress[levelId]?.attempts ?? 0) + 1;
+    const attempts = (progress[levelId]?.attempts ?? 0) + 1 + Math.floor(Math.random() * 100);
     if (levelId.startsWith("map-")) launch(startMap(levelId.replace("map-", ""), difficulty));
     else if (levelId.endsWith("-boss")) launch(startBoss(levelId.replace("-boss", ""), difficulty));
     else if (levelId === "exam-hall") launch(startHall(difficulty));
@@ -477,16 +515,7 @@ export default function GameApp() {
       setExamPhase("caso");
       setExamTotals({ correct: 0, wrong: 0, blank: 0, asked: 0 });
       setSeconds(1800);
-      void fetch(`/api/questions?mode=caso&seed=${Date.now()}`).then(async (res) => {
-        const data = await res.json();
-        if (data.caso) {
-          setCaso(data.caso);
-          setQuestions(data.caso.questions);
-          setQi(0);
-          setPicked(null);
-          setTally({ correct: 0, wrong: 0, blank: 0, ids: [] });
-        }
-      }).catch(() => setExamPhase("done"));
+      void loadCaso(false);
     } else if (levelId === "exam") {
       setScreen("exam");
       setExamPhase("intro");
@@ -526,14 +555,7 @@ export default function GameApp() {
     if (screen === "exam" && examPhase === "test") {
       setExamTotals((prev) => ({ correct: prev.correct + next.correct, wrong: prev.wrong + next.wrong, blank: prev.blank + next.blank, asked: prev.asked + questions.length }));
       setExamPhase("caso");
-      void fetch(`/api/questions?mode=caso&seed=${Date.now()}`).then(async (res) => {
-        const data = await res.json();
-        setCaso(data.caso);
-        setQuestions(data.caso.questions);
-        setQi(0);
-        setPicked(null);
-        setTally({ correct: 0, wrong: 0, blank: 0, ids: [] });
-      }).catch(() => setExamPhase("done"));
+      void loadCaso(true);
       return;
     }
     if (screen === "exam" && examPhase === "caso") {
@@ -615,6 +637,25 @@ export default function GameApp() {
               <div className="progress-track">
                 <div className="progress-fill" style={{ width: `${Math.max(4, Math.round((mastered / 58) * 100))}%` }} />
               </div>
+            </div>
+
+            <div className="reset-bar">
+              <button
+                type="button"
+                className="mini-reset-btn"
+                onClick={resetSeenQuestions}
+                title="Vaciar historial de preguntas y supuestos para que vuelvan a rotar todos frescos"
+              >
+                🔄 Reiniciar ciclo de preguntas
+              </button>
+              <button
+                type="button"
+                className="mini-reset-btn danger-reset-btn"
+                onClick={resetAllProgress}
+                title="Borrar estrellas y puntuaciones para empezar la oposición de cero"
+              >
+                ⚠️ Reiniciar progreso de cero
+              </button>
             </div>
 
             <div className="input-group">
@@ -1165,6 +1206,19 @@ export default function GameApp() {
             <div className="row">
               {(difficulty === "oposicion" || difficulty === "examen") && <span className="timer">{Math.max(0, seconds)}s</span>}
               <MuteButton muted={muted} onToggle={toggleMute} />
+              <button
+                className="ghost"
+                onClick={() => {
+                  if (examPhase === "caso") {
+                    void loadCaso(true);
+                  } else {
+                    setExamPhase("intro");
+                  }
+                }}
+                title="Reiniciar esta fase de la prueba con preguntas nuevas"
+              >
+                🔄 Reiniciar
+              </button>
               <button className="ghost" onClick={() => setScreen("title")}>Salir</button>
             </div>
           </header>
@@ -1175,8 +1229,10 @@ export default function GameApp() {
               <button className="primary" onClick={() => void (async () => {
                 audio.unlock();
                 audio.play("exam");
+                const seenQuestions = readJson<string[]>("opos-seen", []).slice(0, 50).join(",");
+                const seed = Date.now() + Math.floor(Math.random() * 10000);
                 const list = await fetchQuestions(TOPICS.map((item) => item.id), 12, "exam");
-                const mixed = await fetch(`/api/questions?mode=exam&difficulty=${difficulty}&playerId=${playerId}&seed=${Date.now()}`).then((res) => res.json()).catch(() => ({ questions: list }));
+                const mixed = await fetch(`/api/questions?mode=exam&difficulty=${difficulty}&playerId=${playerId}&seed=${seed}&exclude=${seenQuestions}`).then((res) => res.json()).catch(() => ({ questions: list }));
                 setQuestions(mixed.questions?.length ? mixed.questions : list);
                 setQi(0);
                 setPicked(null);
@@ -1190,7 +1246,20 @@ export default function GameApp() {
           {(examPhase === "test" || examPhase === "caso") && currentQuestion && (
             <article className="sheet stack">
               <div className="exam-progress"><span style={{ width: `${((qi + 1) / questions.length) * 100}%` }} /></div>
-              {examPhase === "caso" && caso && <p>{caso.story}</p>}
+              {examPhase === "caso" && caso && (
+                <div className="caso-header-toolbar">
+                  <span className="badge-official">⚖️ SUPUESTO: {caso.title.toUpperCase()}</span>
+                  <button
+                    type="button"
+                    className="change-caso-btn"
+                    onClick={() => void loadCaso(true)}
+                    title="Cargar otro supuesto práctico diferente"
+                  >
+                    🔄 Cambiar a otro Supuesto Práctico
+                  </button>
+                </div>
+              )}
+              {examPhase === "caso" && caso && <p className="caso-story-text">{caso.story}</p>}
               <h2>{currentQuestion.q}</h2>
               <div className="choices">
                 {currentQuestion.o.map((option, index) => (
@@ -1206,12 +1275,13 @@ export default function GameApp() {
           )}
           {examPhase === "done" && (
             <article className="sheet stack">
-              <ChromaImg src={SPRITES.cheer} alt="Alba al terminar" />
+              <ChromaImg src={SPRITES.cheer} alt="Opositor/a al terminar" />
               <h2>{scoreLine(examTotals, examTotals.asked || questions.length)}</h2>
-              <p>La nota del simulacro usa la fórmula del primer ejercicio: aciertos menos un tercio de los errores, sobre 50. Las blancas no restan. El supuesto real se valora aparte; aquí suma como un segundo bloque de preguntas.</p>
-              <div className="row">
-                <button className="primary" onClick={() => setScreen("title")}>Seguir ▶</button>
-                <button className="ghost" onClick={() => setExamPhase("intro")}>Otro intento</button>
+              <p>La nota del simulacro usa la fórmula oficial: aciertos menos un tercio de los errores (A − E/3), sobre 50. Las preguntas en blanco no restan. El supuesto práctico simula la segunda prueba de la oposición.</p>
+              <div className="row exam-done-actions">
+                <button className="primary" onClick={() => setScreen("title")}>Finalizar y volver al inicio</button>
+                <button className="ghost" onClick={() => setExamPhase("intro")}>🔄 Repetir Examen (preguntas nuevas)</button>
+                <button className="ghost" onClick={() => enter("caso-direct")}>⚖️ Hacer otro Supuesto Práctico</button>
               </div>
             </article>
           )}

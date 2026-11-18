@@ -42,7 +42,8 @@ export async function GET(request: Request) {
     return Response.json({ questions: examSet(difficulty, exclude, extras, seed), bank: questionCount() });
   }
   if (mode === "caso") {
-    return Response.json({ caso: pickCaso(seed), bank: questionCount() });
+    const excludeCaso = (url.searchParams.get("excludeCaso") ?? "").split(",").filter(Boolean);
+    return Response.json({ caso: pickCaso(seed, excludeCaso), bank: questionCount() });
   }
   const topic = url.searchParams.get("topic") ?? "";
   const topics = (url.searchParams.get("topics") ?? topic).split(",").filter(Boolean);

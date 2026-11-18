@@ -833,3 +833,64 @@ button:focus-visible, a:focus-visible { outline: 3px solid var(--gold); outline-
   padding: 6px 12px;
 }
 
+/* Reset Bar & Reset Options */
+.reset-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin-top: -6px;
+  margin-bottom: 4px;
+}
+.mini-reset-btn {
+  font-size: 0.78rem;
+  padding: 5px 12px;
+  border-radius: 999px;
+  color: #726252;
+  border: 1px solid rgba(80, 60, 40, 0.18);
+  background: rgba(255, 255, 255, 0.55);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.mini-reset-btn:hover {
+  background: rgba(255, 255, 255, 0.95);
+  color: #1a1510;
+  border-color: #c44d34;
+}
+.danger-reset-btn:hover {
+  color: #b3261e;
+  border-color: #b3261e;
+  background: #fdf2f2;
+}
+
+/* Caso Header Toolbar */
+.caso-header-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+.change-caso-btn {
+  font-size: 0.85rem;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-weight: 700;
+  border: 1.5px solid #2563eb;
+  color: #1d4ed8;
+  background: #eff6ff;
+  cursor: pointer;
+}
+.change-caso-btn:hover {
+  background: #dbeafe;
+}
+.exam-done-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+}
+
+
